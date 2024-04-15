@@ -1,0 +1,15 @@
+/* In your custom CSS file */
+
+.image-3d {
+    box-shadow:
+            0 25px 50px -12px rgba(255, 255, 255, 0.25), /* Lighter outer shadow */
+            0 15px 15px -10px rgba(255, 255, 255, 0.15), /* Lighter mid shadow */
+            0 5px 5px -3px rgba(255, 255, 255, 0.1); /* Lighter inner shadow */
+    border: 2px solid rgba(255, 255, 255, 0.25); /* Optional: light border for more definition */
+    transition: transform 0.3s ease-in-out;
+}
+
+.image-3d:hover {
+    transform: scale(1.03) rotate3d(1, -1, 0, 10deg); /* Tilt effect on hover */
+}
+
