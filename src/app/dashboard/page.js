@@ -1,10 +1,11 @@
 // dashboard/page.js
 "use client";
 import React, { useEffect, useState} from 'react';
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+//import Navbar from "../components/Navbar";
+//import Footer from "../components/Footer";
 import {Card, CardHeader, CardBody, CardFooter, Image, Button} from "@nextui-org/react";
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react'
 import {Link} from "@nextui-org/react";
 import DashboardLayout from './DashboardLayouts';
 export default function Dashboard() {
@@ -41,6 +42,7 @@ export default function Dashboard() {
                         <h4 className="text-white/90 font-medium text-xl">Your Generated Video</h4>
 
                     </CardHeader>
+                    <Suspense>
                     <CardBody>
                         {taskId && (
                             <video controls className="w-full">
@@ -58,6 +60,7 @@ export default function Dashboard() {
                         }
 
                     </CardBody>
+                    </Suspense>
 
                     <CardFooter className="absolute bg-black/40 bottom-0 z-10 border-t-1 border-default-600 dark:border-default-100">
                         <div className="flex flex-grow gap-2 items-center">
