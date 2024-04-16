@@ -9,6 +9,7 @@ import { Suspense } from 'react'
 import {Link} from "@nextui-org/react";
 import DashboardLayout from './DashboardLayouts';
 export default function Dashboard() {
+    const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
     //const router = useRouter();
     // Initialize taskId state
     const searchParams = useSearchParams();
@@ -28,7 +29,7 @@ export default function Dashboard() {
      */
 
     // Correctly construct the downloadUrl using the taskId state
-    const downloadUrl = taskId ? `http://127.0.0.1:8080/tasks/${taskId}/final-1.mp4` : "";
+    const downloadUrl = taskId ? `${apiUrl}/tasks/${taskId}/final-1.mp4` : "";
 
     return (
         <DashboardLayout>

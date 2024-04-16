@@ -11,6 +11,8 @@ import { useRouter } from 'next/navigation';
 import voicesData from '../videoGen/voice';
 
 const VideoGeneratorPage = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
+    // console.log(apiUrl);
     // State hooks for the video generator parameters
     const { isAuthenticated, setShowLoginModal } = useAuth();
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -216,7 +218,7 @@ const VideoGeneratorPage = () => {
 
         // api call to submit the video data
         try {
-            const response = await fetch('http://127.0.0.1:8080/api/v1/videos', {
+            const response = await fetch(`${apiUrl}/api/v1/videos`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(videoData),
@@ -246,7 +248,7 @@ const VideoGeneratorPage = () => {
         }
 
         try {
-            const response = await fetch('http://127.0.0.1:8080/api/v1/scripts', {
+            const response = await fetch(`${apiUrl}/api/v1/scripts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -280,7 +282,7 @@ const VideoGeneratorPage = () => {
         }
 
         try {
-            const response = await fetch('http://127.0.0.1:8080/api/v1/terms', {
+            const response = await fetch(`${apiUrl}/api/v1/terms`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -345,7 +347,7 @@ const VideoGeneratorPage = () => {
 
     const checkTaskStatus = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:8080/api/v1/tasks/${taskId}`);
+            const response = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`);
             const result = await response.json();
             //console.log("======", result.data.progress);
             setTaskProgress(result.data.progress);
@@ -487,16 +489,6 @@ const VideoGeneratorPage = () => {
                             maxRows={1}// Adjust the max length as needed
                         />
 
-                        {/*
-                        <Input
-                    clearable
-                    underlined
-                    labelPlaceholder="Input video script or use AI writing service to generate script."
-                    initialValue={videoScript}
-                    onChange={(e) => setVideoScript(e.target.value)}
-                    fullWidth
-                    className="mb-4"
-                />*/}
 
                         <div className="flex w-full flex-wrap justify-center gap-4">
                             {/* Update button text to display the label of the selected item */}

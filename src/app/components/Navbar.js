@@ -25,6 +25,8 @@ import {AppleLogo} from "./Apple_logo";
 //import useGoogleIdentityServices from "../hook/useGoogleIdentityServices";
 import NextLink from 'next/link';
 export default function Navbar() {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    //console.log(backendUrl);
     //useGoogleIdentityServices()
     //useGoogleApi();
     const { isAuthenticated, setIsAuthenticated, showLoginModal, setShowLoginModal } = useAuth();
@@ -47,9 +49,9 @@ export default function Navbar() {
     // Function to initialize Google SignIn
     const initGoogleSignIn = () => {
         const client = window.google.accounts.oauth2.initTokenClient({
-            client_id: "1093324646306-ls0epdq7o8nfvhgq4dj3d0i1a3m59ncc.apps.googleusercontent.com",
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
             scope: "email profile",
-            redirect_uri: "http://localhost:3000", // Update this
+            redirect_uri: "https://ai-video.jackhui.com.au", // Update this
             callback: handleCredentialResponse,
         });
 
@@ -93,7 +95,7 @@ export default function Navbar() {
             //return
 
             try {
-                const backendResponse = await fetch('http://127.0.0.1:9090/api/dj-rest-auth/google/', {
+                const backendResponse = await fetch(`${backendUrl}/api/dj-rest-auth/google/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ access_token: response.access_token }),
@@ -179,7 +181,7 @@ export default function Navbar() {
         }
 
         try {
-            const response = await fetch('http://localhost:9090/api/dj-rest-auth/logout/', {
+            const response = await fetch(`${backendUrl}/api/dj-rest-auth/logout/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -228,7 +230,7 @@ export default function Navbar() {
 
         if (isSignUp) {
             // If signing up, include both password1 and password2 fields
-            endpoint = 'http://localhost:9090/api/dj-rest-auth/registration/';
+            endpoint = `${backendUrl}/api/dj-rest-auth/registration/`;
             body = JSON.stringify({
                 username: formData.email, // Optionally use email as username or generate a unique username
                 email: formData.email,
@@ -237,7 +239,7 @@ export default function Navbar() {
             });
         } else {
             // If logging in, include the username field with the email as its value
-            endpoint = 'http://localhost:9090/api/dj-rest-auth/login/';
+            endpoint = `${backendUrl}/api/dj-rest-auth/login/`;
             body = JSON.stringify({
                 username: formData.email, // Send email as username for login
                 password: formData.password,
@@ -309,7 +311,7 @@ export default function Navbar() {
         }
 
         try {
-            const response = await fetch('http://localhost:9090/api/dj-rest-auth/password/reset/', {
+            const response = await fetch(`${backendUrl}/api/dj-rest-auth/password/reset/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
