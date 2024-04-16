@@ -32,4 +32,5 @@ logs
 *.log
 
 # Environment Files
-.env*
+.env.local
+.env.production
