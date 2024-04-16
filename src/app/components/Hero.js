@@ -140,7 +140,7 @@ const Hero = () => {
                                         src="https://youtube.com/embed/EW_Xwm1PObw?feature=shared" // Replace VIDEO_ID with the actual YouTube video ID
                                         title="Visiting Italy"
                                         frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
                                         allowFullScreen
                                     ></iframe>
                                 </div>
@@ -158,7 +158,7 @@ const Hero = () => {
                                         src="https://youtube.com/embed/8xRuL7m6kFk?feature=shared" // Replace VIDEO_ID with the actual YouTube video ID
                                         title="What is DeFi"
                                         frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
                                         allowFullScreen
                                     ></iframe>
                                 </div>
