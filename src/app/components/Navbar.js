@@ -24,6 +24,7 @@ import {AppleLogo} from "./Apple_logo";
 //import useGoogleApi from '../hook/useGoogleApi';
 //import useGoogleIdentityServices from "../hook/useGoogleIdentityServices";
 import NextLink from 'next/link';
+import toast, { Toaster } from 'react-hot-toast';
 export default function Navbar() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     //console.log(backendUrl);
@@ -51,7 +52,7 @@ export default function Navbar() {
         const client = window.google.accounts.oauth2.initTokenClient({
             client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
             scope: "email profile",
-            redirect_uri: "https://ai-video.jackhui.com.au", // Update this
+            redirect_uri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URL, // Update this
             callback: handleCredentialResponse,
         });
 
@@ -112,6 +113,7 @@ export default function Navbar() {
                 setShowLoginModal(true);
                 //setIsLoggedIn(true);
                 setLoginMessage('Login successful');
+                toast.success("Login successful");
                 onOpenChange(false);
                 window.dispatchEvent(new Event('login'));
 
@@ -198,10 +200,12 @@ export default function Navbar() {
             setIsAuthenticated(false);
             //setIsLoggedIn(false);
             setLoginMessage('Logged out successfully.');
+            toast.success('Logged out successfully!')
             router.push('/'); // Redirect to home page
         } catch (error) {
             console.error('Logout error:', error);
-            alert('Failed to log out.');
+            toast.error('Failed to log out!');
+            //alert('Failed to log out.');
         }
     };
 
@@ -306,7 +310,8 @@ export default function Navbar() {
     // Function to trigger password reset
     const handlePasswordReset = async () => {
         if (!formData.email) {
-            alert('Please enter your email address.');
+            toast.error('Please enter your email address.')
+            //alert('Please enter your email address.');
             return;
         }
 
@@ -324,10 +329,14 @@ export default function Navbar() {
             }
 
             const data = await response.json();
-            alert('If an account with that email exists, a password reset email has been sent.');
+            toast('If an account with that email exists, \na password reset email has been sent.', {
+                icon: '👏',
+            });
+            //alert('If an account with that email exists, a password reset email has been sent.');
         } catch (error) {
             console.error('Password reset error:', error);
-            alert('Failed to send password reset email.');
+            toast.error('Failed to send password reset email.')
+            //alert('Failed to send password reset email.');
         }
     };
 
