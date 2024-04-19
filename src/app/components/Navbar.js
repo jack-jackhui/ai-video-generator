@@ -15,7 +15,7 @@ import {
     useDisclosure,
     Checkbox,
     Input,
-    Link
+    Link, Image
 } from "@nextui-org/react";
 import {MailIcon} from './MailIcon.jsx';
 import {LockIcon} from './LockIcon.jsx';
@@ -377,11 +377,16 @@ export default function Navbar() {
 
 
     return (
-        <nav className="py-4 bg-transparent">
+        <nav className="py-4 bg-gradient-to-br from-black via-slate-900 to-slate-950">
             <div className="container mx-auto flex justify-between items-center">
-                <div className="flex-grow">
+                <div className="flex items-center space-x-4">
                     <NextLink href="/" className="mx-2 hover:text-gray-300 text-2xl font-bold mr-4">
-                    V
+                        <Image
+                            removeWrapper
+                            alt="Logo"
+                            className="w-[50px] h-[50px]"
+                            src="/images/ai_video_logo.png"
+                        />
                     </NextLink>
                     <NextLink href="/dashboard" className="mx-2 hover:text-gray-300">
                         Dashboard
