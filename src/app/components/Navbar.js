@@ -47,6 +47,37 @@ export default function Navbar() {
         password: '',
     });
 
+    const appleLogin = () => toast.custom((t) => (
+        <div
+            className={`${
+                t.visible ? 'animate-enter' : 'animate-leave'
+            } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+        >
+            <div className="flex-1 w-0 p-4">
+                <div className="flex items-start">
+                    <div className="flex-shrink-0 pt-0.5">
+                        <AppleLogo />
+                    </div>
+                    <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                            Coming Soon!
+                        </p>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Apple ID login is coming.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div className="flex border-l border-gray-200">
+                <button
+                    onClick={() => toast.dismiss(t.id)}
+                    className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    ))
     // Function to initialize Google SignIn
     const initGoogleSignIn = () => {
         const client = window.google.accounts.oauth2.initTokenClient({
@@ -110,11 +141,13 @@ export default function Navbar() {
                 localStorage.setItem('authToken', data.token); // Store the token or sessionToken as per your backend response
                 //console.log(setIsAuthenticated);
                 setIsAuthenticated(true);
-                setShowLoginModal(true);
+                //setShowLoginModal(true);
                 //setIsLoggedIn(true);
                 setLoginMessage('Login successful');
+                setShowLoginModal(false);
                 toast.success("Login successful");
-                onOpenChange(false);
+                router.push('/videoGen');
+                //onOpenChange(false);
                 window.dispatchEvent(new Event('login'));
 
             } catch (error) {
@@ -290,9 +323,11 @@ export default function Navbar() {
             setIsAuthenticated(true);
             //setIsLoggedIn(true);
             setLoginMessage('Successful');
+            toast.success("Login successful");
             window.dispatchEvent(new Event('login'));
             setShowLoginModal(false);
             onOpenChange(false); // Close modal on success
+            router.push('/videoGen');
         } catch (error) {
             console.error('Error:', error);
             setFormErrors({ nonFieldErrors: 'An error occurred. Please try again.' });
@@ -434,7 +469,7 @@ export default function Navbar() {
                                 <Button
                                     startContent={<AppleLogo/>}
                                     auto
-                                    onPress={() => alert("Log in with Apple")}
+                                    onPress={appleLogin}
                                     color="warning"
                                     className="text-white"
                                 >
@@ -519,6 +554,7 @@ export default function Navbar() {
                     </ModalContent>
                 </Modal>
 
+                <Toaster />
             </div>
         </nav>
     );

@@ -9,9 +9,12 @@ import { Textarea, Card, CardBody, Input,
 import { Link } from 'next/link';
 import { useRouter } from 'next/navigation';
 import voicesData from '../videoGen/voice';
+import toast, { Toaster } from 'react-hot-toast';
+
 
 const VideoGeneratorPage = () => {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
+    const apiKey = process.env.NEXT_PUBLIC_VIDEO_API_KEY;
     // console.log(apiUrl);
     // State hooks for the video generator parameters
     const { isAuthenticated, setShowLoginModal } = useAuth();
@@ -147,12 +150,14 @@ const VideoGeneratorPage = () => {
         //console.log('Value of videoTerms:', videoTerms);
         // Check if the video subject and audio are selected
         if (!videoSubject.trim()) {
-            alert("Please enter a video subject.");
+            toast.error("Please enter a video subject.")
+            //alert("Please enter a video subject.");
             return;
         }
 
         if (!audio.value) {
-            alert("Please select an audio option.");
+            toast.error("Please select an audio option.")
+            //alert("Please select an audio option.");
             return;
         }
 
@@ -220,7 +225,10 @@ const VideoGeneratorPage = () => {
         try {
             const response = await fetch(`${apiUrl}/api/v1/videos`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: {
+                    'Content-Type': 'application/json',
+                    'access_token': apiKey
+                },
                 body: JSON.stringify(videoData),
             });
 
@@ -243,14 +251,18 @@ const VideoGeneratorPage = () => {
     const generateVideoScript = async () => {
         // Ensure there is a video subject before making the API call
         if (!videoSubject.trim()) {
-            alert("Please enter a video subject.");
+            toast.error("Please enter a video subject.")
+            //alert("Please enter a video subject.");
             return;
         }
 
         try {
             const response = await fetch(`${apiUrl}/api/v1/scripts`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'access_token': apiKey
+                },
                 body: JSON.stringify({
                     video_subject: videoSubject,
                     video_language: "", // Update as necessary
@@ -277,14 +289,18 @@ const VideoGeneratorPage = () => {
     const generateVideoKeywords = async () => {
         // Ensure there is a video subject before making the API call
         if (!videoSubject.trim() || !videoScript.trim() ) {
-            alert("Please enter a video subject and generate video script.");
+            toast.error("Please enter a video subject and generate a video script.");
+            //alert("Please enter a video subject and generate video script.");
             return;
         }
 
         try {
             const response = await fetch(`${apiUrl}/api/v1/terms`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'access_token': apiKey
+                },
                 body: JSON.stringify({
                     video_subject: videoSubject,
                     video_script: videoScript, // Update as necessary
@@ -347,7 +363,12 @@ const VideoGeneratorPage = () => {
 
     const checkTaskStatus = async () => {
         try {
-            const response = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`);
+            const response = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`,{
+                method: 'GET',
+                headers: {'access_token': apiKey}
+                }
+
+            );
             const result = await response.json();
             //console.log("======", result.data.progress);
             setTaskProgress(result.data.progress);
@@ -567,8 +588,8 @@ const VideoGeneratorPage = () => {
                                             Download Video {/*${taskId}*/}
                                         </Button>
                                     ) : (
-                                        <Button auto flat color="error" onPress={handleClose}>
-                                            Close
+                                        <Button isLoading auto flat color="error" onPress={handleClose}>
+                                            Loading
                                         </Button>
                                     )}
                                     </div>
