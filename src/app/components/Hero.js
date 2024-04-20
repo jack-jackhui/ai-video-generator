@@ -80,7 +80,7 @@ const Hero = () => {
                 animate="visible"
             >
                 {/* Video and overlay */}
-                <video autoPlay loop muted playsinline
+                <video autoPlay loop muted playsInline
                        className="absolute top-0 left-0 w-full h-full object-cover"
                        key={currentVideoIndex}
                        ref={videoRef}>

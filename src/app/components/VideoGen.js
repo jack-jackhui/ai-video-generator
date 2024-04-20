@@ -422,7 +422,7 @@ const VideoGeneratorPage = () => {
     return (
         <div className="relative flex justify-center items-center h-screen w-full overflow-hidden">
 
-            <video autoPlay loop muted playsinline
+            <video autoPlay loop muted playsInline
                    className="absolute z-0 w-auto min-w-full min-h-full max-w-none"
                    key={currentVideoIndex} // Adding key to force re-mount
                    ref={videoRef} // Using ref to access video element
