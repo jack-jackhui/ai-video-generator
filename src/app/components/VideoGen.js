@@ -453,6 +453,7 @@ const VideoGeneratorPage = () => {
                             className={{
                                 input: [
                                     "bg-transparent",
+                                    "font-bold",
                                 ],
                                 innerWrapper: "bg-transparent",
                             }}
@@ -461,7 +462,7 @@ const VideoGeneratorPage = () => {
                         />
 
                         <div className="flex w-full justify-start">
-                        <Button variant="bordered" className="bg-transparent shadow-lg" onClick={generateVideoScript}>
+                        <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onClick={generateVideoScript}>
                             Generate Video Script (optional)
                         </Button>
                         </div>
@@ -485,7 +486,7 @@ const VideoGeneratorPage = () => {
                             maxLength={2000} // Adjust the max length as needed
                         />
                         <div className="flex w-full justify-start">
-                            <Button variant="bordered" className="bg-transparent shadow-lg" onClick={generateVideoKeywords}>
+                            <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onClick={generateVideoKeywords}>
                                 Generate Video Keywords (optional)
                             </Button>
                         </div>
@@ -511,7 +512,7 @@ const VideoGeneratorPage = () => {
                         />
 
 
-                        <div className="flex w-full flex-wrap justify-center gap-4">
+                        <div className="flex w-full flex-wrap justify-around gap-4">
                             {/* Update button text to display the label of the selected item */}
                             {createDropdown('Aspect Ratio', aspectRatio, handleAspectRatioChange, [{'Landscape 16:9':'16:9'}, {'Portrait 9:16':'9:16'}])}
                             {createDropdown('Audio', audio, handleAudioChange, voicesData.map(voice => ({[`${voice.name}-${voice.gender}`]: voice.name})))}

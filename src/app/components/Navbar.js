@@ -32,6 +32,7 @@ export default function Navbar() {
     //useGoogleApi();
     const { isAuthenticated, setIsAuthenticated, showLoginModal, setShowLoginModal } = useAuth();
     const router = useRouter();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -90,21 +91,6 @@ export default function Navbar() {
         // Request the authorization code
         client.requestAccessToken();
     };
-
-    {/* Deprecated
-        const initGoogleSignIn = () => {
-            const client = window.google.accounts.oauth2.initCodeClient({
-                client_id: "1093324646306-ls0epdq7o8nfvhgq4dj3d0i1a3m59ncc.apps.googleusercontent.com",
-                scope: "email profile",
-                ux_mode: "popup",
-                redirect_uri: "https://developers.google.com/oauthplayground", // Update this
-                callback: handleCredentialResponse,
-            });
-
-            // Request the authorization code
-            client.requestCode();
-        };
-    */}
 
     useEffect(() => {
         // Ensure the Google Identity Services script is loaded
@@ -167,46 +153,13 @@ export default function Navbar() {
         }
     }, []);
 
-    {/* Old code for Google login - Deprecated
-    const handleGoogleLogin = async () => {
-        const GoogleAuth = window.gapi.auth2.getAuthInstance();
-        try {
-            const GoogleUser = await GoogleAuth.signIn();
-
-            // Get the ID token to send to your backend
-            const id_token = GoogleUser.getAuthResponse().id_token;
-
-            // Send the ID token to your backend via HTTPS
-            // Adjust this to your backend's endpoint
-            fetch('http://127.0.0.1:9090/api/google/login/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ token: id_token }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    console.log(data);
-                    localStorage.setItem('authToken', data.token); // Store the token
-                    setIsLoggedIn(true); // Update login status
-                    onOpenChange(false); // Close modal on success
-                    setLoginMessage('Login successful'); // Provide feedback
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    setLoginMessage('Login failed'); // Provide feedback
-                });
-        } catch (error) {
-            console.error('Login failed:', error);
-            setLoginMessage('Login failed'); // Provide feedback
-            if (error.error === 'popup_closed_by_user') {
-                setLoginMessage('The user closed the Google sign-in popup.'); // Specific feedback
-            }
+    const handleLoginLogout = async () => {
+        if (isAuthenticated) {
+            await handleLogout();
+        } else {
+            setShowLoginModal(true);
         }
     };
-    */}
-
 // Function to handle user logout
     const handleLogout = async () => {
         const token = localStorage.getItem('authToken');
@@ -377,53 +330,72 @@ export default function Navbar() {
 
 
     return (
-        <nav className="py-4 bg-gradient-to-br from-black via-slate-900 to-slate-950">
-            <div className="container mx-auto flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                    <NextLink href="/" className="mx-2 hover:text-gray-300 text-2xl font-bold mr-4">
-                        <Image
-                            removeWrapper
-                            alt="Logo"
-                            className="w-[50px] h-[50px]"
-                            src="/images/ai_video_logo.png"
-                        />
-                    </NextLink>
-                    <NextLink href="/dashboard" className="mx-2 hover:text-gray-300">
-                        Dashboard
-                    </NextLink>
-                    <NextLink href="/videoGen" className="mx-2 hover:text-gray-300">
-                            AI Video Generator
-                    </NextLink>
-                    <a href="#" className="mx-2 hover:text-gray-300">For Developers (API)</a>
-                    <a href="#" className="mx-2 hover:text-gray-300">Tools</a>
-                </div>
-                <div>
-                    {isAuthenticated ? (
-                        <>
-                            Logged in {/* Replace UserIcon with your user icon component */}
-                            <Button
-                                variant="flat"
-                                color="warning"
-                                onPress={handleLogout}
-                                className="capitalize"
-                            >
-                                Logout
-                            </Button>
-                        </>
+        <nav className="py-2 bg-transparent">
 
-                    ) : (
-                        // Display login/sign-up button if not logged in
-                    <Button
-                        variant="flat"
-                        color="warning"
-                        onPress={() => setShowLoginModal(true)}
-                        className="capitalize"
-                    >
-                        Log in
-                    </Button>
+            <div className="container mx-auto flex justify-between items-center px-4">
+                <NextLink href="/" className="relative overflow-hidden h-15 flex items-center mr-4">
+                    <Image src="/images/ai_video_logo_2.png" alt="Logo"
+                           className="w-20 h-15"
+                           style={{
+                               position: 'relative', // Allows you to fine-tune the position
+                               top: '50%',          // Centers the logo vertically
+                               transform: 'translateY(-1%)', // Ensures the centering is accurate
+                           }}
+                    />
+                </NextLink>
+                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor">
+                        {mobileMenuOpen ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                         )}
+                    </svg>
+                </button>
+                {/* Desktop Menu */}
+                <div className="hidden flex-grow md:flex items-center justify-start space-x-4">
+                    <NextLink href="/" >Home</NextLink>
+                    <NextLink href="/dashboard" >Dashboard</NextLink>
+                    <NextLink href="/videoGen" >AI Video Generator</NextLink>
+                    <a href="#" >For Developers (API)</a>
+                    <a href="#" >Tools</a>
                 </div>
+                <div className="hidden flex-grow md:flex items-center justify-end">
+                    {isAuthenticated ? (
+                        <Button color="warning" variant="ghost" onPress={handleLogout} >
+                            Logout
+                        </Button>
+                    ) : (
+                        <Button color="warning" variant="ghost" onPress={handleLoginLogout}>
+                            Login
+                        </Button>
+                    )}
+                </div>
+                {/* Mobile Menu */}
+                <div className={`${mobileMenuOpen ? 'fixed inset-0' : 'hidden'} bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center space-y-4 md:hidden`}>
+                    <NextLink href="/" className="text-xl">Home</NextLink>
+                    <NextLink href="/dashboard" className="text-xl">Dashboard</NextLink>
+                    <NextLink href="/videoGen" className="text-xl">AI Video Generator</NextLink>
+                    <a href="#" className="text-xl">For Developers (API)</a>
+                    <a href="#" className="text-xl">Tools</a>
+                    {isAuthenticated ? (
+                        <Button onPress={handleLogout} color="warning" variant="ghost">
+                            Logout
+                        </Button>
+                    ) : (
+                        <Button onPress={handleLoginLogout} color="warning" variant="ghost">
+                            Login
+                        </Button>
+                    )}
+                    <button onClick={() => setMobileMenuOpen(false)} className="text-white p-2">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
 
+            {/* Modal Popup*/}
                 <Modal
                     backdrop={backdrop}
                     isOpen={showLoginModal}
@@ -560,7 +532,7 @@ export default function Navbar() {
                 </Modal>
 
                 <Toaster />
-            </div>
+
         </nav>
     );
 };

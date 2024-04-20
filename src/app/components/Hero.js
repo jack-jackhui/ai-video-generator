@@ -74,7 +74,7 @@ const Hero = () => {
         <div className="relative min-h-screen flex flex-col">
             {/* Apply the motion.div with variants to animate the container */}
             <motion.div
-                className="relative z-0 min-h-screen w-full"
+                className="relative min-h-screen flex flex-col p-4 md:p-24"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
@@ -93,7 +93,7 @@ const Hero = () => {
                             variants={itemVariants}>
                     <h2 className="text-white text-6xl mt-0">AI-Powered Video Generation</h2>
                     <p className="text-white text-xl mt-4 mb-8">Instantly turn your text inputs into publish-worthy videos.</p>
-                    <motion.div variants={itemVariants}>
+
                         <Button onPress={handleLearnMoreClick}
                                 disableRipple
                                 className="relative overflow-visible rounded-full
@@ -103,40 +103,40 @@ const Hero = () => {
                                 after:z-[-1] after:transition after:!duration-500 hover:after:scale-150
                                 hover:after:opacity-0 hover:bg-gradient-to-r from-pink-500
                                 via-red-500 to-yellow-500">Learn More</Button>
-                    </motion.div>
+
                 </motion.div>
             </motion.div>
             {/* Content section with scroll ref */}
-            <div ref={nextSectionRef} className="p-24">
-            <div ref={ref} className="p-24">
+            <div ref={nextSectionRef} className="px-4 md:p-24">
+            <div ref={ref} className="px4 md:p-24">
 
                 {/* New section for categories */}
-                <motion.div className="container mx-auto px-4 py-16 bg-slate-800 rounded-xl"
+                <motion.div className="container mx-auto px-4 py-8 md:py-16 bg-slate-800 rounded-xl"
                             variants={variants}
                             initial="hidden"
                             animate={controls}
                 >
-                    <h1 className="text-center text-5xl mb-10">Transform your ideas into captivating videos</h1>
-                    <motion.div className="flex justify-between space-x-4 mb-8" variants={itemVariants}>
+                    <h1 className="text-center text-3xl md:text-5xl mb-8">Transform your ideas into captivating videos</h1>
+                    <motion.div className="flex flex-wrap justify-around md:justify-between mb-8" variants={itemVariants}>
                         {/* Category buttons */}
-                        <Button variant="bordered">Content Creation</Button>
-                        <Button variant="bordered">Business & Corporate</Button>
-                        <Button variant="bordered">Marketing & Social Media</Button>
-                        <Button variant="bordered">Education & E-Learning</Button>
-                        <Button variant="bordered">eCommerce</Button>
-                        <Button variant="bordered">Localization & Translation</Button>
+                        <Button variant="ghost" className="mb-2">Content Creation</Button>
+                        <Button variant="ghost" className="mb-2">Business & Corporate</Button>
+                        <Button variant="ghost" className="mb-2">Marketing & Social Media</Button>
+                        <Button variant="ghost" className="mb-2">Education & E-Learning</Button>
+                        <Button variant="ghost" className="mb-2">eCommerce</Button>
+                        <Button variant="ghost" className="mb-2">Localization & Translation</Button>
                     </motion.div>
 
-                    <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center justify-items-center" variants={itemVariants}>
+                    <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8" variants={itemVariants}>
                         {/* Example category card */}
-                        <Card isFooterBlurred className="bg-transparent w-full max-w-lg py-4 max-auto">
+                        <Card isFooterBlurred className="bg-transparent w-full max-w-lg py-4">
                             <CardHeader className="pb-0 pt-2 px-4 flex-col items-start">
-                                <h4 className="text-large">Sample Video 1</h4>
+                                <h4 className="text-xl">Sample Video 1</h4>
                             </CardHeader>
                             <CardBody className="overflow-visible py-2">
                                 <div>
                                     <iframe
-                                        className="w-full h-[300px]"
+                                        className="w-full h-48 md:h-[300px]"
                                         src="https://youtube.com/embed/EW_Xwm1PObw?feature=shared" // Replace VIDEO_ID with the actual YouTube video ID
                                         title="Visiting Italy"
                                         frameBorder="0"
@@ -147,14 +147,14 @@ const Hero = () => {
                             </CardBody>
                         </Card>
 
-                        <Card className="bg-transparent w-full max-w-lg py-4 mx-auto">
+                        <Card className="bg-transparent w-full max-w-lg py-4">
                             <CardHeader className="pb-0 pt-2 px-4 flex-col items-start">
-                                <h4 className="text-large">Sample Video 2</h4>
+                                <h4 className="text-xl">Sample Video 2</h4>
                             </CardHeader>
                             <CardBody className="overflow-visible py-2">
                                 <div>
                                     <iframe
-                                        className="w-full h-[300px]"
+                                        className="w-full h-48 md:h-[300px]"
                                         src="https://youtube.com/embed/8xRuL7m6kFk?feature=shared" // Replace VIDEO_ID with the actual YouTube video ID
                                         title="What is DeFi"
                                         frameBorder="0"
