@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import voicesData from '../videoGen/voice';
 import toast, { Toaster } from 'react-hot-toast';
 
-
 const VideoGeneratorPage = () => {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
     const apiKey = process.env.NEXT_PUBLIC_VIDEO_API_KEY;
@@ -202,24 +201,6 @@ const VideoGeneratorPage = () => {
         };
         //console.log("Sending videoData to backend:", JSON.stringify(videoData, null, 2));
 
-        // Simulate an API call
-        /*
-        try {
-            // Simulate an API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            // Handle successful submission here
-            console.log("Submission successful");
-
-        } catch (error) {
-            // Handle errors here
-            console.error("Submission failed", error);
-        } finally {
-            setIsSubmitting(false);
-            //setVisible(false);
-        }
-
-         */
 
         // api call to submit the video data
         try {
@@ -420,10 +401,10 @@ const VideoGeneratorPage = () => {
     };
 
     return (
-        <div className="relative flex justify-center items-center h-screen w-full overflow-hidden">
+        <div className="relative flex justify-center items-center min-h-screen w-full overflow-hidden">
 
             <video autoPlay loop muted playsInline
-                   className="absolute z-0 w-auto min-w-full min-h-full max-w-none"
+                   className="absolute z-0 w-auto min-w-full min-h-full max-w-none object-cover"
                    key={currentVideoIndex} // Adding key to force re-mount
                    ref={videoRef} // Using ref to access video element
             >
@@ -431,14 +412,16 @@ const VideoGeneratorPage = () => {
                 Your browser does not support the video tag.
             </video>
 
-            <div className="absolute z-10 w-full h-full bg-black/50"></div>
+            <div className="absolute z-10 w-full h-full p-4 md:p-8 bg-black/50"></div>
             <div className="z-10">
-            <Card className="w-full max-w-10xl bg-gray-800/60 shadow=md transform -translate-y-20">
+            <Card className="mx-auto max-w-4xl bg-gray-800/60 shadow-lg transform -translate-y-20">
                 <CardBody>
-                    <div className="flex flex-col items-center gap-4">
-                <h3 className="text-center text-2xl font-bold">
+
+                        <div className="flex flex-col items-center gap-4">
+                <h3 className="text-center text-2xl md:text-3xl font-bold">
                     AI Video Generator
                 </h3>
+
                         <Textarea
                             isRequired
                             key="videoSubject"
@@ -450,19 +433,12 @@ const VideoGeneratorPage = () => {
                             placeholder="Enter your video subject - max 150 words."
                             value={videoSubject}
                             onChange={(e) => handleChange('videoSubject', e.target.value)}
-                            className={{
-                                input: [
-                                    "bg-transparent",
-                                    "font-bold",
-                                ],
-                                innerWrapper: "bg-transparent",
-                            }}
                             maxLength={150}
                             maxRows={1}// Adjust the max length as needed
                         />
 
                         <div className="flex w-full justify-start">
-                        <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onClick={generateVideoScript}>
+                        <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onPress={generateVideoScript}>
                             Generate Video Script (optional)
                         </Button>
                         </div>
@@ -477,12 +453,6 @@ const VideoGeneratorPage = () => {
                             placeholder="Use AI to generate your video script and customise it - max 2000 words. This is optional."
                             value={videoScript}
                             onChange={(e) => handleChange('videoScript', e.target.value)}
-                            className={{
-                                input: [
-                                    "bg-transparent",
-                                ],
-                                innerWrapper: "bg-transparent",
-                            }}
                             maxLength={2000} // Adjust the max length as needed
                         />
                         <div className="flex w-full justify-start">
@@ -501,18 +471,12 @@ const VideoGeneratorPage = () => {
                             placeholder="Generate video keywords. Optional."
                             value={videoTerms}
                             onChange={(e) => handleChange('videoKeywords', e.target.value)}
-                            className={{
-                                input: [
-                                    "bg-transparent",
-                                ],
-                                innerWrapper: "bg-transparent",
-                            }}
                             maxLength={100}
                             maxRows={1}// Adjust the max length as needed
                         />
 
 
-                        <div className="flex w-full flex-wrap justify-around gap-4">
+                        <div className="flex w-full flex-wrap justify-between gap-4 px-8">
                             {/* Update button text to display the label of the selected item */}
                             {createDropdown('Aspect Ratio', aspectRatio, handleAspectRatioChange, [{'Landscape 16:9':'16:9'}, {'Portrait 9:16':'9:16'}])}
                             {createDropdown('Audio', audio, handleAudioChange, voicesData.map(voice => ({[`${voice.name}-${voice.gender}`]: voice.name})))}
@@ -523,7 +487,7 @@ const VideoGeneratorPage = () => {
                                 color="primary"
                                 size="md"
                             >
-                                <p className="text-white">Sound Effects</p>
+                                <p>Sound Effects</p>
                             </Checkbox>
                         </div>
                 <Button auto shadow color="warning" onClick={handleSubmit} disabled={isSubmitting || taskCompleted}>
@@ -603,21 +567,23 @@ const VideoGeneratorPage = () => {
 };
 
 // Helper function to create dropdown components
+
 function createDropdown(label, selectedItem, onChange, options) {
     return (
         <Dropdown>
             <DropdownTrigger>
                 <Button variant="bordered" className="bg-transparent border-white">
-                    {selectedItem.label}
+                    {selectedItem.label || `Select ${label}`}
                 </Button>
             </DropdownTrigger>
-            <DropdownMenu aria-label={`${label} Actions`} className="dark:text-white bg-transparent rounded-lg">
+            <DropdownMenu aria-label={`${label} Actions`} className="dark:text-white bg-transparent rounded-lg w-full md:w-auto text-sm md:text-base overflow-y-auto">
                 {options.map(option => {
                     const key = Object.keys(option)[0];
                     const value = option[key];
+                    const displayLabel = value.startsWith('zh') ? `中文: ${key}` : key;
                     return (
-                        <DropdownItem key={value} onClick={() => onChange({ label: key, value })}>
-                            {key}
+                        <DropdownItem className="overflow-y-auto" key={value} onClick={() => onChange({ label: key, value })}>
+                            {displayLabel}
                         </DropdownItem>
                     );
                 })}

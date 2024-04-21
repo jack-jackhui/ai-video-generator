@@ -6,6 +6,7 @@ import VideoGenerator from '../components/VideoGen'; // Adjust the path as neces
 import Footer from '../components/Footer';
 import Navbar from "../components/Navbar";
 //import Layout from "../layout"
+
 export default function VideoGenPage() {
     //const router = useRouter();
     //const [isAuthenticated, setIsAuthenticated] = useState(false);
