@@ -401,6 +401,7 @@ const VideoGeneratorPage = () => {
     };
 
     return (
+        <>
         <div className="relative flex justify-center items-center min-h-screen w-full overflow-hidden">
 
             <video autoPlay loop muted playsInline
@@ -499,7 +500,9 @@ const VideoGeneratorPage = () => {
 
             </div>
 
-            <Modal backdrop="blur" isOpen={visible} onClose={handleClose}
+        </div>
+
+            <Modal backdrop="blur" isOpen={visible} placement="center" onClose={handleClose}
                    motionProps={{
                        variants: {
                            enter: {
@@ -521,48 +524,48 @@ const VideoGeneratorPage = () => {
                        }
                    }}
             >
-                    <ModalContent>
-                                <ModalHeader className="flex flex-col gap-1 items-center">
-                                    {isSubmitting ? "Processing..." : "Video Processing Completed"}
-                                </ModalHeader>
-                                <ModalBody>
-                                    {isSubmitting ? (
-                                        <div className="flex flex-col gap-1 items-center">
-                                            <CircularProgress
-                                                aria-label="Loading..."
-                                                size="lg"
-                                                value={taskProgress}
-                                                color="warning"
-                                                showValueLabel={true}/>
-                                            Processing your video data...
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full">
-                                        <p>Your video processing is completed!</p>
-                                        </div>
-                                    )}
-                                </ModalBody>
-                                <ModalFooter>
-                                    <div className="flex justify-center w-full">
-                                    {taskCompleted ? (
-                                        <Button
-                                            auto
-                                            color="success"
-                                            onPress={handleNavigate}
-                                        >
-                                            Download Video {/*${taskId}*/}
-                                        </Button>
-                                    ) : (
-                                        <Button isLoading auto flat color="error" onPress={handleClose}>
-                                            Loading
-                                        </Button>
-                                    )}
-                                    </div>
-                                </ModalFooter>
-                    </ModalContent>
-                </Modal>
+                <ModalContent>
+                    <ModalHeader className="flex flex-col gap-1 items-center">
+                        {isSubmitting ? "Processing..." : "Video Processing Completed"}
+                    </ModalHeader>
+                    <ModalBody>
+                        {isSubmitting ? (
+                            <div className="flex flex-col gap-1 items-center">
+                                <CircularProgress
+                                    aria-label="Loading..."
+                                    size="lg"
+                                    value={taskProgress}
+                                    color="warning"
+                                    showValueLabel={true}/>
+                                Processing your video data...
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-full">
+                                <p>Your video processing is completed!</p>
+                            </div>
+                        )}
+                    </ModalBody>
+                    <ModalFooter>
+                        <div className="flex justify-center w-full">
+                            {taskCompleted ? (
+                                <Button
+                                    auto
+                                    color="success"
+                                    onPress={handleNavigate}
+                                >
+                                    Download Video {/*${taskId}*/}
+                                </Button>
+                            ) : (
+                                <Button isLoading auto flat color="error" onPress={handleClose}>
+                                    Loading
+                                </Button>
+                            )}
+                        </div>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+        </>
 
-        </div>
     );
 };
 
