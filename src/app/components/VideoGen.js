@@ -145,8 +145,7 @@ const VideoGeneratorPage = () => {
 
     // Handler to submit the video generator form
     const handleSubmit = async () => {
-        //console.log('Type of videoTerms:', typeof videoTerms); // This should log 'string'
-        //console.log('Value of videoTerms:', videoTerms);
+
         // Check if the video subject and audio are selected
         if (!videoSubject.trim()) {
             toast.error("Please enter a video subject.")

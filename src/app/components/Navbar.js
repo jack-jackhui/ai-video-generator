@@ -269,9 +269,9 @@ export default function Navbar() {
             }
 
             const data = await response.json();
-            //console.log(data); // Handle success. Maybe set authentication tokens, redirect, etc.
+            console.log(data); // Handle success. Maybe set authentication tokens, redirect, etc.
 
-            localStorage.setItem('authToken', data.token); // Store the token or sessionToken as per your backend response
+            localStorage.setItem('authToken', data.access); // Store the token or sessionToken as per your backend response
             //console.log(setIsAuthenticated);
             setIsAuthenticated(true);
             //setIsLoggedIn(true);
@@ -280,7 +280,7 @@ export default function Navbar() {
             window.dispatchEvent(new Event('login'));
             setShowLoginModal(false);
             onOpenChange(false); // Close modal on success
-            router.push('/videoGen');
+            //router.push('/videoGen');
         } catch (error) {
             console.error('Error:', error);
             setFormErrors({ nonFieldErrors: 'An error occurred. Please try again.' });
@@ -357,6 +357,7 @@ export default function Navbar() {
                     <NextLink href="/" >Home</NextLink>
                     <NextLink href="/dashboard" >Dashboard</NextLink>
                     <NextLink href="/videoGen" >AI Video Generator</NextLink>
+                    <NextLink href="/faceSwap" >AI FaceSwap</NextLink>
                     <a href="#" >For Developers (API)</a>
                     <a href="#" >Tools</a>
                 </div>
@@ -376,6 +377,7 @@ export default function Navbar() {
                     <NextLink href="/" className="text-xl">Home</NextLink>
                     <NextLink href="/dashboard" className="text-xl">Dashboard</NextLink>
                     <NextLink href="/videoGen" className="text-xl">AI Video Generator</NextLink>
+                    <NextLink href="/faceSwap" className="text-xl">AI FaceSwap</NextLink>
                     <a href="#" className="text-xl">For Developers (API)</a>
                     <a href="#" className="text-xl">Tools</a>
                     {isAuthenticated ? (
