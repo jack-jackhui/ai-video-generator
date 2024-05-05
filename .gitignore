@@ -28,6 +28,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env.production
+.env.build_config
 
 # vercel
 .vercel
@@ -37,3 +38,6 @@ yarn-error.log*
 next-env.d.ts
 
 /.idea/
+
+# Local shell scripts
+build_and_push.sh

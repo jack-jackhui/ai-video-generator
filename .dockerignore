@@ -33,4 +33,8 @@ logs
 
 # Environment Files
 .env.local
+.env.build_config
 #.env.production
+
+# Local shell scripts
+build_and_push.sh
