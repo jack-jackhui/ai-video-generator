@@ -142,11 +142,11 @@ export default function FaceSwap() {
                             <Suspense fallback={<div>Loading...</div>}>
                                 <CardBody>
                                     <iframe
-                                        className="w-full h-48 md:h-[300px]"
-                                        src={`https://youtube.com/embed/OxDymbIwHxk?feature=shared`}
+                                        className="w-full h-full"  // Ensures the iframe fills the container
+                                        src="https://player.bilibili.com/player.html?aid=1104352221&bvid=BV1Yw4m197RP&cid=1541084995&p=1"
                                         title="Leonardo Dicaprio - The Great Gatsby"
                                         frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
                                     ></iframe>
                                 </CardBody>
@@ -178,11 +178,11 @@ export default function FaceSwap() {
                         <Suspense fallback={<div>Loading...</div>}>
                             <CardBody>
                                 <iframe
-                                    className="w-full h-48 md:h-[300px]"
-                                    src={`https://youtube.com/embed/8PFs8IZVs3I?feature=shared`}
+                                    className="w-full h-full"  // Ensures the iframe fills the container
+                                    src="https://player.bilibili.com/player.html?bvid=BV1gm421u753&cid=1541078218&page=1"
                                     title="Robert Downey Jr - Iron Man"
                                     frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </CardBody>
@@ -214,11 +214,11 @@ export default function FaceSwap() {
                         <Suspense fallback={<div>Loading...</div>}>
                             <CardBody>
                                 <iframe
-                                    className="w-full h-48 md:h-[300px]"
-                                    src={`https://youtube.com/embed/2Shfwpan81k?feature=shared`}
-                                    title="Zhen Huan"
+                                    className="w-full h-full"  // Ensures the iframe fills the container
+                                    src="https://player.bilibili.com/player.html?aid=1604300326&bvid=BV1Jm421p7g8&cid=1541089940&p=1"
+                                    title="Sun Li - Zhen Huan"
                                     frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </CardBody>
@@ -250,11 +250,11 @@ export default function FaceSwap() {
                         <Suspense fallback={<div>Loading...</div>}>
                             <CardBody>
                                 <iframe
-                                    className="w-full h-48 md:h-[300px]"
-                                    src={`https://youtube.com/embed/WjY9UoPCTdA?feature=shared`}
+                                    className="w-full h-full"  // Ensures the iframe fills the container
+                                    src="https://player.bilibili.com/player.html?aid=1004425596&bvid=BV1Hx4y1i7dL&cid=1541084810&p=1"
                                     title="Chow Yun Fat - A Better Tomorrow"
                                     frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </CardBody>
