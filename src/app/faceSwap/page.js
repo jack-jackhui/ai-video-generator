@@ -146,7 +146,7 @@ export default function FaceSwap() {
                                         src="https://player.bilibili.com/player.html?aid=1104352221&bvid=BV1Yw4m197RP&cid=1541084995&p=1"
                                         title="Leonardo Dicaprio - The Great Gatsby"
                                         frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
                                     ></iframe>
                                 </CardBody>
@@ -182,7 +182,7 @@ export default function FaceSwap() {
                                     src="https://player.bilibili.com/player.html?bvid=BV1gm421u753&cid=1541078218&page=1"
                                     title="Robert Downey Jr - Iron Man"
                                     frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </CardBody>
@@ -218,7 +218,7 @@ export default function FaceSwap() {
                                     src="https://player.bilibili.com/player.html?aid=1604300326&bvid=BV1Jm421p7g8&cid=1541089940&p=1"
                                     title="Sun Li - Zhen Huan"
                                     frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </CardBody>
@@ -254,7 +254,7 @@ export default function FaceSwap() {
                                     src="https://player.bilibili.com/player.html?aid=1004425596&bvid=BV1Hx4y1i7dL&cid=1541084810&p=1"
                                     title="Chow Yun Fat - A Better Tomorrow"
                                     frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </CardBody>
