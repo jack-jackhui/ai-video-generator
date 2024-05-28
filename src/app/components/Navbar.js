@@ -15,7 +15,7 @@ import {
     useDisclosure,
     Checkbox,
     Input,
-    Link, Image
+    Link, Image, DropdownItem, DropdownTrigger, Dropdown, DropdownMenu
 } from "@nextui-org/react";
 import {MailIcon} from './MailIcon.jsx';
 import {LockIcon} from './LockIcon.jsx';
@@ -24,6 +24,7 @@ import {AppleLogo} from "./Apple_logo";
 //import useGoogleApi from '../hook/useGoogleApi';
 //import useGoogleIdentityServices from "../hook/useGoogleIdentityServices";
 import NextLink from 'next/link';
+import {ChevronDown, Lock, Activity, Flash, Server, TagUser, Scale} from "./Icons.jsx";
 import toast, { Toaster } from 'react-hot-toast';
 export default function Navbar() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -328,9 +329,18 @@ export default function Navbar() {
         }
     };
 
+    const icons = {
+        chevron: <ChevronDown fill="currentColor" size={16} />,
+        scale: <Scale className="text-warning" fill="currentColor" size={30} />,
+        lock: <Lock className="text-success" fill="currentColor" size={30} />,
+        activity: <Activity className="text-secondary" fill="currentColor" size={30} />,
+        flash: <Flash className="text-primary" fill="currentColor" size={30} />,
+        server: <Server className="text-success" fill="currentColor" size={30} />,
+        user: <TagUser className="text-danger" fill="currentColor" size={30} />,
+    };
 
     return (
-        <nav className="py-2 bg-transparent">
+        <nav className="bg-transparent">
 
             <div className="container mx-auto flex justify-between items-center px-4">
                 <NextLink href="/" className="relative overflow-hidden h-15 flex items-center mr-4">
@@ -357,7 +367,46 @@ export default function Navbar() {
                     <NextLink href="/" >Home</NextLink>
                     <NextLink href="/dashboard" >Dashboard</NextLink>
                     <NextLink href="/videoGen" >AI Video Generator</NextLink>
-                    <NextLink href="/faceSwap" >AI FaceSwap</NextLink>
+                    <Dropdown>
+                        <DropdownTrigger>
+                            <Button
+                                disableRipple
+                                className="text-md p-0 bg-transparent data-[hover=true]:bg-transparent"
+                                endContent={icons.chevron}
+                                radius="sm"
+                                variant="light"
+                            >
+                                AI FaceSwap
+                            </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                            aria-label="FaceSwap features"
+                            className="w-[340px]"
+                            itemClasses={{
+                                base: "gap-4",
+                            }}
+                        >
+                            <DropdownItem
+                                key="VideoFaceSwap"
+                                description="AI Video Face Swap"
+                                startContent={icons.user}
+                            >
+                                <NextLink href="/faceSwap">
+                                Video Face Swap
+                                </NextLink>
+                            </DropdownItem>
+                            <DropdownItem
+                                key="PhotoFaceSwap"
+                                description="AI Photo Face Swap."
+                                startContent={icons.activity}
+                            >
+                                <NextLink href="/photoFaceSwap">
+                                Photo Face Swap
+                                </NextLink>
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+
                     <a href="#" >For Developers (API)</a>
                     <a href="#" >Tools</a>
                 </div>
@@ -378,6 +427,7 @@ export default function Navbar() {
                     <NextLink href="/dashboard" className="text-xl">Dashboard</NextLink>
                     <NextLink href="/videoGen" className="text-xl">AI Video Generator</NextLink>
                     <NextLink href="/faceSwap" className="text-xl">AI FaceSwap</NextLink>
+                    <NextLink href="/photoFaceSwap" className="text-xl">AI Photo FaceSwap</NextLink>
                     <a href="#" className="text-xl">For Developers (API)</a>
                     <a href="#" className="text-xl">Tools</a>
                     {isAuthenticated ? (
