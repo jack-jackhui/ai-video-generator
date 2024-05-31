@@ -270,7 +270,7 @@ export default function Navbar() {
             }
 
             const data = await response.json();
-            console.log(data); // Handle success. Maybe set authentication tokens, redirect, etc.
+            //console.log(data); // Handle success. Maybe set authentication tokens, redirect, etc.
 
             localStorage.setItem('authToken', data.access); // Store the token or sessionToken as per your backend response
             //console.log(setIsAuthenticated);

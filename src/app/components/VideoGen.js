@@ -13,7 +13,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 const VideoGeneratorPage = () => {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
-    const apiKey = process.env.NEXT_PUBLIC_VIDEO_API_KEY;
+    //const apiKey = process.env.NEXT_PUBLIC_VIDEO_API_KEY;
     // console.log(apiUrl);
     // State hooks for the video generator parameters
     const { isAuthenticated, setShowLoginModal } = useAuth();
@@ -31,6 +31,7 @@ const VideoGeneratorPage = () => {
     const [subtitleFont, setSubtitleFont] = useState({label: 'Select Subtitle Font', value: ''});
     const [soundEffects, setSoundEffects] = useState(true);
     const [taskProgress, setTaskProgress] = useState(0);
+    const [isScriptGenerating, setIsScriptGenerating] = useState(false);
     //const [isInvalid, setIsInvalid] = useState(false);
     //const [errorMessage, setErrorMessage] = useState('');
 
@@ -200,6 +201,12 @@ const VideoGeneratorPage = () => {
         };
         //console.log("Sending videoData to backend:", JSON.stringify(videoData, null, 2));
 
+        const apiKey = localStorage.getItem('authToken'); // Retrieve the token from local storage
+
+        if (!apiKey) {
+            console.log("You must be logged in to perform this action.");
+            return;
+        }
 
         // api call to submit the video data
         try {
@@ -236,12 +243,13 @@ const VideoGeneratorPage = () => {
             return;
         }
 
+        setIsScriptGenerating(true); // Set loading state to true
+
         try {
             const response = await fetch(`${apiUrl}/api/v1/scripts`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'access_token': apiKey
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     video_subject: videoSubject,
@@ -263,6 +271,8 @@ const VideoGeneratorPage = () => {
             }
         } catch (error) {
             console.error("A problem occurred with the fetch operation:", error);
+        } finally {
+            setIsScriptGenerating(false); // Set loading state to false
         }
     };
 
@@ -278,8 +288,7 @@ const VideoGeneratorPage = () => {
             const response = await fetch(`${apiUrl}/api/v1/terms`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'access_token': apiKey
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     video_subject: videoSubject,
@@ -342,6 +351,12 @@ const VideoGeneratorPage = () => {
     }, [currentVideoIndex]);
 
     const checkTaskStatus = async () => {
+        const apiKey = localStorage.getItem('authToken'); // Retrieve the token from local storage
+
+        if (!apiKey) {
+            console.log("You must be logged in to perform this action.");
+            return;
+        }
         try {
             const response = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`,{
                 method: 'GET',
@@ -438,7 +453,7 @@ const VideoGeneratorPage = () => {
                         />
 
                         <div className="flex w-full justify-start">
-                        <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onPress={generateVideoScript}>
+                        <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onPress={generateVideoScript} isLoading={isScriptGenerating}>
                             Generate Video Script (optional)
                         </Button>
                         </div>
