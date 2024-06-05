@@ -1,6 +1,7 @@
 // components/Navbar.js
 "use client";
 import React from "react";
+import { authApi } from '../api/AuthApi';
 import { useRouter } from 'next/navigation';
 import { useAuth } from "../context/AuthContext";
 import {useState, useEffect, useRef} from "react";
@@ -31,12 +32,12 @@ export default function Navbar() {
     //console.log(backendUrl);
     //useGoogleIdentityServices()
     //useGoogleApi();
-    const { isAuthenticated, setIsAuthenticated, showLoginModal, setShowLoginModal } = useAuth();
+    const { isAuthenticated, setIsAuthenticated, loginUser, logoutUser, showLoginModal, setShowLoginModal } = useAuth();
     const router = useRouter();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    //const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [loginMessage, setLoginMessage] = useState('');
     //const signInDivRef = useRef(null);
     //const [backdrop, setBackdrop] = React.useState('opaque')
@@ -48,6 +49,13 @@ export default function Navbar() {
         email: '',
         password: '',
     });
+
+    /*
+    useEffect(() => {
+        console.log('Authentication status:', isAuthenticated);
+    }, [isAuthenticated]);
+
+     */
 
     const appleLogin = () => toast.custom((t) => (
         <div
@@ -112,20 +120,18 @@ export default function Navbar() {
         if (response.access_token) {
             //console.log(response.access_token);
             //return
-
             try {
-                const backendResponse = await fetch(`${backendUrl}/api/dj-rest-auth/google/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ access_token: response.access_token }),
-                });
-
+                const { backendResponse } = await authApi.post('/api/dj-rest-auth/google/', { access_token: response.access_token });
+                loginUser(backendResponse.data.token);
+                /*
                 if (!backendResponse.ok) {
                     throw new Error('Failed to authenticate with the backend');
                 }
 
-                const data = await backendResponse.json();
-                localStorage.setItem('authToken', data.token); // Store the token or sessionToken as per your backend response
+                 */
+
+                //const data = await backendResponse.json();
+                //localStorage.setItem('authToken', data.token); // Store the token or sessionToken as per your backend response
                 //console.log(setIsAuthenticated);
                 setIsAuthenticated(true);
                 //setShowLoginModal(true);
@@ -145,24 +151,43 @@ export default function Navbar() {
     };
 
     // Check for authentication token on component mount
+    /*
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            //console.log(setIsAuthenticated);
-            setIsAuthenticated(true);
-            //setIsLoggedIn(true); // Set logged in if token exists
-        }
-    }, []);
+        const checkAuthStatus = async () => {
+            try {
+                const response = await authApi.get('/api/dj-rest-auth/user/');
+                setIsAuthenticated(response.status === 200);
+            } catch (error) {
+                if (error.response) {
+                    // Check specifically for unauthorized or forbidden and silently handle
+                    if ([401, 403].includes(error.response.status)) {
+                        setIsAuthenticated(false);
+                    } else {
+                        // Only log unexpected errors
+                        console.error('Unexpected error checking authentication status:', error);
+                    }
+                } else {
+                    // Log if error response is not available (network issues, etc.)
+                    console.error('Network error or no response:', error);
+                }
+            }
+        };
+        checkAuthStatus();
+    }, [setIsAuthenticated]);
+
+     */
 
     const handleLoginLogout = async () => {
         if (isAuthenticated) {
-            await handleLogout();
+            logoutUser();
+            //await handleLogout();
         } else {
             setShowLoginModal(true);
         }
     };
 // Function to handle user logout
     const handleLogout = async () => {
+        /*
         const token = localStorage.getItem('authToken');
         if (!token) {
             console.error('No token found');
@@ -183,6 +208,10 @@ export default function Navbar() {
             }
 
             localStorage.removeItem('authToken'); // Remove the stored token
+
+         */
+        try {
+            await authApi.post('/api/dj-rest-auth/logout/');
             //console.log(setIsAuthenticated);
             setIsAuthenticated(false);
             //setIsLoggedIn(false);
@@ -221,6 +250,7 @@ export default function Navbar() {
 
         if (isSignUp) {
             // If signing up, include both password1 and password2 fields
+            /*
             endpoint = `${backendUrl}/api/dj-rest-auth/registration/`;
             body = JSON.stringify({
                 username: formData.email, // Optionally use email as username or generate a unique username
@@ -238,7 +268,25 @@ export default function Navbar() {
         }
         //console.log("==============", body);
 
+             */
+            endpoint = '/api/dj-rest-auth/registration/';
+            body = {
+                username: formData.email, // Optionally use email as username or generate a unique username
+                email: formData.email,
+                password1: formData.password,
+                password2: formData.password, // Assuming you have a state to capture password confirmation
+            };
+        } else {
+            // If logging in, include the username field with the email as its value
+            endpoint = '/api/dj-rest-auth/login/';
+            body = {
+                username: formData.email, // Send email as username for login
+                password: formData.password,
+            };
+        }
+
         try {
+            /*
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -286,6 +334,41 @@ export default function Navbar() {
             console.error('Error:', error);
             setFormErrors({ nonFieldErrors: 'An error occurred. Please try again.' });
         }
+        */
+            const response = await authApi.post(endpoint, body);
+            //console.log(response);
+            loginUser(response.data.access);
+
+            // Handle success. Maybe set authentication tokens, redirect, etc.
+            //setIsAuthenticated(true);
+            //console.log(isAuthenticated);
+            setLoginMessage('Successful');
+            toast.success("Login successful");
+            window.dispatchEvent(new Event('login'));
+            setShowLoginModal(false);
+            onOpenChange(false); // Close modal on success
+            router.push('/videoGen'); // Redirect to another route if needed
+        } catch (error) {
+            const errorData = error.response.data;
+            let errors = { email: '', password: '', password1: '', password2: '', nonFieldErrors: '' };
+
+            // Handle non-field errors
+            if (errorData.non_field_errors) {
+                errors.nonFieldErrors = errorData.non_field_errors.join(' '); // Assuming it's an array
+            }
+
+            // Handle field-specific errors if errorData is not an array
+            if (!Array.isArray(errorData)) {
+                Object.keys(errorData).forEach(key => {
+                    // Join error messages if they're in an array
+                    errors[key] = Array.isArray(errorData[key]) ? errorData[key].join(' ') : errorData[key];
+                });
+            }
+
+            setFormErrors(errors);
+            console.error('Error:', error);
+            setFormErrors({ nonFieldErrors: 'An error occurred. Please try again.' });
+        }
     };
 
     const handleGoogleLoginClick = () => {
@@ -297,6 +380,7 @@ export default function Navbar() {
     };
 
     // Function to trigger password reset
+    /*
     const handlePasswordReset = async () => {
         if (!formData.email) {
             toast.error('Please enter your email address.')
@@ -326,6 +410,27 @@ export default function Navbar() {
             console.error('Password reset error:', error);
             toast.error('Failed to send password reset email.')
             //alert('Failed to send password reset email.');
+        }
+    };
+
+     */
+    const handlePasswordReset = async () => {
+        if (!formData.email) {
+            toast.error('Please enter your email address.');
+            return;
+        }
+
+        try {
+            const response = await authApi.post('/api/dj-rest-auth/password/reset/', {
+                email: formData.email
+            });
+
+            toast('If an account with that email exists, a password reset email has been sent.', {
+                icon: '👏',
+            });
+        } catch (error) {
+            console.error('Password reset error:', error);
+            toast.error('Failed to send password reset email.');
         }
     };
 

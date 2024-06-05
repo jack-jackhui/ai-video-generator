@@ -1,6 +1,7 @@
 // components/VideoGenerator.js
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../context/AuthContext";
+import videoApi from "../api/VideoApi";
 import { Textarea, Card, CardBody, Input,
     Dropdown, DropdownTrigger, DropdownMenu, DropdownItem,
     RadioGroup, Radio, Button, Checkbox, Modal, ModalContent,
@@ -201,6 +202,7 @@ const VideoGeneratorPage = () => {
         };
         //console.log("Sending videoData to backend:", JSON.stringify(videoData, null, 2));
 
+        /*
         const apiKey = localStorage.getItem('authToken'); // Retrieve the token from local storage
 
         if (!apiKey) {
@@ -208,27 +210,32 @@ const VideoGeneratorPage = () => {
             return;
         }
 
+         */
+
         // api call to submit the video data
         try {
+            /*
             const response = await fetch(`${apiUrl}/api/v1/videos`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'access_token': apiKey
+                    'Content-Type': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify(videoData),
             });
 
-            const result = await response.json();
-            if (response.ok) {
+             */
+            const response = await videoApi.post('/api/v1/videos', videoData);
+            const result = await response.data;
+            if (response.status === 200) {
                 setTaskId(result.data.task_id);
                 // Don't set isSubmitting to false here because we're now waiting for the task to complete
             } else {
                 throw new Error(result.message || 'Submission failed');
-                setVisible(false);
             }
         } catch (error) {
-            console.error(error);
+            //console.error(error);
+            toast.error("Error submitting video data: " + error.message);
             setIsSubmitting(false);
             setVisible(false);
         }
@@ -246,6 +253,7 @@ const VideoGeneratorPage = () => {
         setIsScriptGenerating(true); // Set loading state to true
 
         try {
+            /*
             const response = await fetch(`${apiUrl}/api/v1/scripts`, {
                 method: 'POST',
                 headers: {
@@ -269,6 +277,18 @@ const VideoGeneratorPage = () => {
             } else {
                 console.error("Failed to generate video script: ", data.message);
             }
+            */
+            const response = await videoApi.post('/api/v1/scripts', {
+                video_subject: videoSubject,
+                video_language: "", // Update as necessary
+                paragraph_number: 1,
+            });
+
+            if (response.status === 200 && response.data) {
+                setVideoScript(response.data.data.video_script);
+            } else {
+                console.error("Failed to generate video script: ", response.data.message);
+            }
         } catch (error) {
             console.error("A problem occurred with the fetch operation:", error);
         } finally {
@@ -285,6 +305,7 @@ const VideoGeneratorPage = () => {
         }
 
         try {
+            /*
             const response = await fetch(`${apiUrl}/api/v1/terms`, {
                 method: 'POST',
                 headers: {
@@ -302,9 +323,15 @@ const VideoGeneratorPage = () => {
             }
 
             const data = await response.json();
-            if (data && data.status === 200 && data.data && data.data.video_terms) {
+            */
+            const response = await videoApi.post('/api/v1/terms', {
+                video_subject: videoSubject,
+                video_script: videoScript, // Update as necessary
+                amount: 5
+            });
+            if (response.status === 200 && response.data) {
                 // Safely handling different types of data
-                const terms = data.data.video_terms;
+                const terms = response.data.data.video_terms;
                 if (typeof terms === 'string') {
                     setVideoTerms(terms);
                 } else if (Array.isArray(terms)) {
@@ -316,7 +343,7 @@ const VideoGeneratorPage = () => {
                     console.error("Unexpected type for video terms:", typeof terms);
                 }
             } else {
-                console.error("Failed to generate video keywords: ", data.message);
+                console.error("Failed to generate video keywords: ", response.data.message);
             }
         } catch (error) {
             console.error("A problem occurred with the fetch operation:", error);
@@ -351,23 +378,30 @@ const VideoGeneratorPage = () => {
     }, [currentVideoIndex]);
 
     const checkTaskStatus = async () => {
+        /*
         const apiKey = localStorage.getItem('authToken'); // Retrieve the token from local storage
 
         if (!apiKey) {
             console.log("You must be logged in to perform this action.");
             return;
         }
+
+         */
         try {
+            /*
             const response = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`,{
                 method: 'GET',
-                headers: {'access_token': apiKey}
+                credentials: 'include'
                 }
-
             );
             const result = await response.json();
+
+             */
             //console.log("======", result.data.progress);
+            const response = await videoApi.get(`/api/v1/tasks/${taskId}`);
+            const result = response.data;
             setTaskProgress(result.data.progress);
-            if (response.ok && result.data.progress === 100) {
+            if (response.status === 200 && result.data.progress === 100) {
                 setTaskCompleted(true);
                 setIsSubmitting(false);
             }
@@ -376,6 +410,7 @@ const VideoGeneratorPage = () => {
             console.error("Error fetching task status:", error);
         }
     };
+
 
     useEffect(() => {
         let intervalId;

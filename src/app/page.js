@@ -5,8 +5,10 @@ import {NextUIProvider} from "../lib/NextUi";
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Footer from './components/Footer';
-
+import { initializeAuth } from './api/AuthApi'
 export default function Page() {
+    initializeAuth();
+
     return (
         <NextUIProvider>
         <div className="min-h-screen bg-gradient-to-br from-black via-slate-800 to-purple-950" >
