@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
             await authApi.post('/api/dj-rest-auth/logout/');
             sessionStorage.removeItem('jwtToken');
             setIsAuthenticated(false);
-            await fetchCSRFToken();
+            //await fetchCSRFToken();
             router.push('/'); // Redirect to home page
         } catch (error) {
             console.error('Logout error:', error);
