@@ -10,7 +10,7 @@ import Footer from './components/Footer';
 import { initializeAuth } from './api/AuthApi'
 export default function Page() {
     useEffect(() => {
-        initializeApp();
+        initializeAuth();
     }, []);
 
     return (
