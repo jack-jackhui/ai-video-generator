@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect} from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from "../api/AuthApi";
 const AuthContext = createContext(null);
-const router = useRouter();
+
 export function useAuth() {
     return useContext(AuthContext);
 }
@@ -11,6 +11,7 @@ export function useAuth() {
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const router = useRouter();
 
     const verifyAuthentication = async () => {
         try {

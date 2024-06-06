@@ -8,10 +8,19 @@ const authApi = axios.create({
     baseURL: API_URL,
     withCredentials: true,  // Necessary to send cookies over CORS
     headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': Cookies.get('csrftoken')
+        'Content-Type': 'application/json'
+        //'X-CSRFToken': Cookies.get('csrftoken')
     }
 });
+
+// Dynamically set CSRF token for each request
+authApi.interceptors.request.use((config) => {
+    const csrfToken = Cookies.get('csrftoken');
+    if (csrfToken) {
+        config.headers['X-CSRFToken'] = csrfToken;
+    }
+    return config;
+}, (error) => Promise.reject(error));
 
 // Use interceptor to handle errors globally
 authApi.interceptors.response.use(response => response, error => {
@@ -47,9 +56,21 @@ const refreshAccessToken = async () => {
     }
 };
 
-const initializeAuth = () => {
+const fetchCSRFToken = async () => {
+    try {
+        // Call the endpoint that refreshes/returns a CSRF token
+        const response = await axios.get(`${API_URL}/api/csrf/`, { withCredentials: true });
+        // Optionally set CSRF token in axios if needed immediately after fetching
+        const csrfToken = response.data.csrfToken;
+        Cookies.set('csrftoken', csrfToken);
+    } catch (error) {
+        console.error('Failed to fetch CSRF token:', error);
+    }
+};
+const initializeAuth = async () => {
     // Setting token on initial load only if in browser environment
     if (typeof window !== "undefined") {
+        await fetchCSRFToken();
         const jwtToken = sessionStorage.getItem('jwtToken');
         if (jwtToken) {
             authApi.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
@@ -58,4 +79,4 @@ const initializeAuth = () => {
     }
 };
 
-export { authApi, initializeAuth, refreshAccessToken };
+export { authApi, initializeAuth, refreshAccessToken, fetchCSRFToken };
