@@ -1,4 +1,5 @@
 // app/page.js
+"use client";
 import * as React from "react";
 import {useEffect} from "react";
 import {NextUIProvider} from "../lib/NextUi";
