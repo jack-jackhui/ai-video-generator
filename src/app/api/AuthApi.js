@@ -8,15 +8,9 @@ const authApi = axios.create({
     baseURL: API_URL,
     withCredentials: true,  // Necessary to send cookies over CORS
     headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-CSRFToken': Cookies.get('csrftoken')
     }
-});
-
-// Setting CSRF Token for every request
-authApi.interceptors.request.use(config => {
-    const csrf_token = Cookies.get('csrftoken'); // Get CSRF token from cookies
-    config.headers['X-CSRFToken'] = csrf_token; // Set CSRF token in headers
-    return config;
 });
 
 // Use interceptor to handle errors globally
