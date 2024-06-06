@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-//const jwtDecode = require('jwt-decode');
+import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -10,6 +10,13 @@ const authApi = axios.create({
     headers: {
         'Content-Type': 'application/json'
     }
+});
+
+// Setting CSRF Token for every request
+authApi.interceptors.request.use(config => {
+    const csrf_token = Cookies.get('csrftoken'); // Get CSRF token from cookies
+    config.headers['X-CSRFToken'] = csrf_token; // Set CSRF token in headers
+    return config;
 });
 
 // Use interceptor to handle errors globally
