@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect} from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi } from "../api/AuthApi";
+import { authApi, fetchCSRFToken } from "../api/AuthApi";
 const AuthContext = createContext(null);
 
 export function useAuth() {
@@ -58,10 +58,16 @@ export const AuthProvider = ({ children }) => {
         verifyAuthentication();
     };
 
-    const logoutUser = () => {
-        sessionStorage.removeItem('jwtToken');
-        setIsAuthenticated(false);
-        router.push('/'); // Redirect to home page
+    const logoutUser = async () => {
+        try {
+            await authApi.post('/api/dj-rest-auth/logout/');
+            sessionStorage.removeItem('jwtToken');
+            setIsAuthenticated(false);
+            await fetchCSRFToken();
+            router.push('/'); // Redirect to home page
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
     };
 
     return (
