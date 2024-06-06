@@ -185,9 +185,11 @@ export default function Navbar() {
             setShowLoginModal(true);
         }
     };
-// Function to handle user logout
+
+    /*
+    // Function to handle user logout
     const handleLogout = async () => {
-        /*
+
         const token = localStorage.getItem('authToken');
         if (!token) {
             console.error('No token found');
@@ -209,7 +211,6 @@ export default function Navbar() {
 
             localStorage.removeItem('authToken'); // Remove the stored token
 
-         */
         try {
             await authApi.post('/api/dj-rest-auth/logout/');
             //console.log(setIsAuthenticated);
@@ -224,6 +225,9 @@ export default function Navbar() {
             //alert('Failed to log out.');
         }
     };
+
+     */
+
 
 
     const toggleForms = () => setIsSignUp(!isSignUp);
@@ -517,7 +521,7 @@ export default function Navbar() {
                 </div>
                 <div className="hidden flex-grow md:flex items-center justify-end">
                     {isAuthenticated ? (
-                        <Button color="warning" variant="ghost" onPress={handleLogout} >
+                        <Button color="warning" variant="ghost" onPress={handleLoginLogout} >
                             Logout
                         </Button>
                     ) : (
@@ -536,7 +540,7 @@ export default function Navbar() {
                     <a href="#" className="text-xl">For Developers (API)</a>
                     <a href="#" className="text-xl">Tools</a>
                     {isAuthenticated ? (
-                        <Button onPress={handleLogout} color="warning" variant="ghost">
+                        <Button onPress={handleLoginLogout} color="warning" variant="ghost">
                             Logout
                         </Button>
                     ) : (

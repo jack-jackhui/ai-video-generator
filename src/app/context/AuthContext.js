@@ -1,8 +1,9 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect} from 'react';
+import { useRouter } from 'next/navigation';
 import { authApi } from "../api/AuthApi";
 const AuthContext = createContext(null);
-
+const router = useRouter();
 export function useAuth() {
     return useContext(AuthContext);
 }
@@ -59,6 +60,7 @@ export const AuthProvider = ({ children }) => {
     const logoutUser = () => {
         sessionStorage.removeItem('jwtToken');
         setIsAuthenticated(false);
+        router.push('/'); // Redirect to home page
     };
 
     return (
