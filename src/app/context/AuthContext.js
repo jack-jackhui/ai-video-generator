@@ -61,7 +61,6 @@ export const AuthProvider = ({ children }) => {
     const logoutUser = async () => {
         try {
             await fetchCSRFToken();
-            authApi.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
             await authApi.post('/api/dj-rest-auth/logout/');
             sessionStorage.removeItem('jwtToken');
             setIsAuthenticated(false);
