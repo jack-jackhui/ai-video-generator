@@ -24,18 +24,25 @@ videoApi.interceptors.request.use(function(config) {
     return Promise.reject(error);
 });
 
-videoApi.interceptors.response.use(response => response, async error => {
-    if (error.response && error.response.status === 401 && !error.config.__isRetryRequest) {
+videoApi.interceptors.response.use(async (response) => {
+    return response;
+}, async (error) => {
+    const originalRequest = error.config;
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;  // Mark the request as retried
+
         try {
-            await refreshAccessToken();  // Refresh the token
-            error.config.__isRetryRequest = true;
-            error.config.headers['Authorization'] = `Bearer ${sessionStorage.getItem('jwtToken')}`;
-            return videoApi(error.config);  // Retry the request with the new token
+            await refreshAccessToken();  // Attempt to refresh the token
+            const newToken = sessionStorage.getItem('jwtToken');  // Get the new token
+            if (newToken) {
+                originalRequest.headers['Authorization'] = `Bearer ${newToken}`;  // Update the authorization header
+                return videoApi(originalRequest);  // Retry the original request with the new token
+            }
         } catch (refreshError) {
             console.error('Token refresh failed:', refreshError);
-            return Promise.reject(refreshError);
+            // Handle failed refresh here (e.g., redirect to login)
         }
     }
-    return Promise.reject(error);
+    return Promise.reject(error);  // Return the error if not a 401 or if it has been retried already
 });
 export default videoApi;

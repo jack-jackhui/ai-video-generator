@@ -418,7 +418,7 @@ const VideoGeneratorPage = () => {
         if (taskId && !taskCompleted) {
             intervalId = setInterval(() => {
                 checkTaskStatus();
-            }, 2000); // Poll every 2 seconds
+            }, 30000); // Poll every 30 seconds
         }
 
         return () => {

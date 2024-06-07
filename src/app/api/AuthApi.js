@@ -39,10 +39,15 @@ const setRefreshTimer = (token) => {
     const decoded = jwtDecode(token);
     const currentTime = Date.now() / 1000;
     const expTime = decoded.exp;
-    const refreshTiming = (expTime - currentTime - 60) * 1000;
-    setTimeout(() => refreshAccessToken(), refreshTiming);
+    // Refresh 30 seconds before the actual expiration to ensure the new token is ready
+    const refreshTiming = (expTime - currentTime - 30) * 1000;  // 30 seconds before expiration
+    if (refreshTiming > 0) {
+        setTimeout(() => refreshAccessToken(), refreshTiming);
+    } else {
+        // If the calculated timing is already past, refresh immediately
+        refreshAccessToken();
+    }
 };
-
 const refreshAccessToken = async () => {
     try {
         const response = await axios.post(`${API_URL}/api/dj-rest-auth/token/refresh/`, {}, { withCredentials: true });
