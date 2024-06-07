@@ -1,5 +1,5 @@
 import axios from 'axios';
-import authApi from './AuthApi';  // Import authApi to get the updated headers
+import { refreshAccessToken } from './AuthApi';  // Import authApi to get the updated headers
 const VIDEO_API_URL = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
 
 const videoApi = axios.create({
@@ -24,4 +24,18 @@ videoApi.interceptors.request.use(function(config) {
     return Promise.reject(error);
 });
 
+videoApi.interceptors.response.use(response => response, async error => {
+    if (error.response && error.response.status === 401 && !error.config.__isRetryRequest) {
+        try {
+            await refreshAccessToken();  // Refresh the token
+            error.config.__isRetryRequest = true;
+            error.config.headers['Authorization'] = `Bearer ${sessionStorage.getItem('jwtToken')}`;
+            return videoApi(error.config);  // Retry the request with the new token
+        } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            return Promise.reject(refreshError);
+        }
+    }
+    return Promise.reject(error);
+});
 export default videoApi;
