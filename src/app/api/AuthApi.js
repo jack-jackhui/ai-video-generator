@@ -70,7 +70,7 @@ const fetchCSRFToken = async () => {
 const initializeAuth = async () => {
     // Setting token on initial load only if in browser environment
     if (typeof window !== "undefined") {
-        //await fetchCSRFToken();
+        await fetchCSRFToken();
         const jwtToken = sessionStorage.getItem('jwtToken');
         if (jwtToken) {
             authApi.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
