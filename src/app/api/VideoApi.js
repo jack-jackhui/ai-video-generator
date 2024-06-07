@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { refreshAccessToken } from './AuthApi';  // Import authApi to get the updated headers
+//import { refreshAccessToken } from './AuthApi';  // Import authApi to get the updated headers
 const VIDEO_API_URL = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
 
 const videoApi = axios.create({
@@ -24,6 +24,16 @@ videoApi.interceptors.request.use(function(config) {
     return Promise.reject(error);
 });
 
+videoApi.interceptors.response.use(response => response, error => {
+    if (error.response && error.response.status === 401 && !error.config._retry) {
+        error.config._retry = true; // Mark the request as retried
+        // Automatically retry the request assuming the refresh has occurred via HttpOnly cookie
+        return videoApi(error.config); // Retry the original request
+    }
+    return Promise.reject(error); // If the retry fails, or if it's not a 401, reject the promise
+});
+
+/*
 videoApi.interceptors.response.use(async (response) => {
     return response;
 }, async (error) => {
@@ -45,4 +55,6 @@ videoApi.interceptors.response.use(async (response) => {
     }
     return Promise.reject(error);  // Return the error if not a 401 or if it has been retried already
 });
+
+ */
 export default videoApi;

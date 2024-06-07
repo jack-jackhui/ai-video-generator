@@ -23,18 +23,24 @@ authApi.interceptors.request.use((config) => {
 }, (error) => Promise.reject(error));
 
 // Use interceptor to handle errors globally
-authApi.interceptors.response.use(response => response, error => {
-    // Check for error handle specific cases
-    if (error.response.status === 401) {
-        // You can still handle 401 specifically if you think there might be cases where the token could expire
-        console.error('Unauthorized, redirect to login');
-        // Optionally redirect to login or show a modal
-    } else {
-        console.error('Error status:', error.response.status);
+authApi.interceptors.response.use(response => response, async error => {
+    if (error.response.status === 401 && !error.config._retry) {
+        error.config._retry = true;
+        try {
+            // Attempt to refresh the token using the refresh token cookie automatically sent by the browser
+            const response = await axios.post(`${API_URL}/api/dj-rest-auth/token/refresh/`, {}, { withCredentials: true });
+            sessionStorage.setItem('jwtToken', response.data.access);  // Update the access token in sessionStorage
+            authApi.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+            return authApi(error.config);  // Retry the original request with the new token
+        } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            // Handle failed refresh here (e.g., redirect to login)
+        }
     }
     return Promise.reject(error);
 });
 
+/*
 const setRefreshTimer = (token) => {
     const decoded = jwtDecode(token);
     const currentTime = Date.now() / 1000;
@@ -50,16 +56,32 @@ const setRefreshTimer = (token) => {
 };
 const refreshAccessToken = async () => {
     try {
-        const response = await axios.post(`${API_URL}/api/dj-rest-auth/token/refresh/`, {}, { withCredentials: true });
-        const newToken = response.data.access_token;
+        console.log("Attempting to refresh access token...");
+        // Retrieve the refresh token from session storage
+        const refreshToken = sessionStorage.getItem('refreshToken');
+        if (!refreshToken) {
+            throw new Error("No refresh token found");
+        }
+        const response = await axios.post(`${API_URL}/api/dj-rest-auth/token/refresh/`, {
+            refresh: refreshToken
+        }, { withCredentials: true });
+        const newToken = response.data.access;
+        const newRefreshToken = response.data.refresh;  // Assuming the response includes a new refresh token
+
+        console.log("Access token refreshed successfully.");
         sessionStorage.setItem('jwtToken', newToken);
+        sessionStorage.setItem('refreshToken', newRefreshToken);  // Update the refresh token in storage
         authApi.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         setRefreshTimer(newToken);
+        console.log("Refresh timer reset with new token.");
     } catch (error) {
         console.error('Unable to refresh token', error);
         sessionStorage.removeItem('jwtToken');
+        sessionStorage.removeItem('refreshToken');
     }
 };
+
+ */
 
 const fetchCSRFToken = async () => {
     try {
@@ -72,16 +94,25 @@ const fetchCSRFToken = async () => {
         console.error('Failed to fetch CSRF token:', error);
     }
 };
+/*
 const initializeAuth = async () => {
     // Setting token on initial load only if in browser environment
     if (typeof window !== "undefined") {
         await fetchCSRFToken();
         const jwtToken = sessionStorage.getItem('jwtToken');
         if (jwtToken) {
+            console.log("JWT token found, setting authorization header...");
             authApi.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
             setRefreshTimer(jwtToken);
+            console.log("JWT token refresh timer set.");
+        } else {
+            console.log("No JWT token found in session storage.");
         }
+    } else {
+        console.log("initializeAuth skipped: not running in a browser environment.");
     }
 };
 
-export { authApi, initializeAuth, refreshAccessToken, fetchCSRFToken };
+ */
+
+export { authApi, fetchCSRFToken };
