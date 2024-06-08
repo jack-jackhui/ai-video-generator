@@ -28,7 +28,7 @@ authApi.interceptors.response.use(response => response, async error => {
         error.config._retry = true;
         try {
             // Attempt to refresh the token using the refresh token cookie automatically sent by the browser
-            const response = await axios.post(`${API_URL}/api/dj-rest-auth/token/refresh/`, {}, { withCredentials: true });
+            const response = await axios.post(`${API_URL}/api/token-refresh/`, {}, { withCredentials: true });
             sessionStorage.setItem('jwtToken', response.data.access);  // Update the access token in sessionStorage
             authApi.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
             return authApi(error.config);  // Retry the original request with the new token

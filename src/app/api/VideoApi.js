@@ -32,9 +32,9 @@ videoApi.interceptors.response.use(response => response, async error => {
         // No need to manually refresh the token, rely on the HttpOnly cookie
         try {
             // Make a call to a designated refresh endpoint that expects the refresh token as a cookie
-            await axios.post(`${API_URL}/api/dj-rest-auth/token/refresh/`, {}, { withCredentials: true });
-            // If the refresh is successful, retry the original request
-            const newToken = sessionStorage.getItem('jwtToken'); // Assuming the new token is now stored in sessionStorage
+            const refreshResponse = await axios.post(`${API_URL}/api/token-refresh/`, {}, { withCredentials: true });
+            const newToken = refreshResponse.data.access;
+            sessionStorage.setItem('jwtToken', newToken); // Store the new token
             originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
             return videoApi(originalRequest);
         } catch (refreshError) {
