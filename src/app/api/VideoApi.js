@@ -1,6 +1,7 @@
 import axios from 'axios';
 //import { refreshAccessToken } from './AuthApi';  // Import authApi to get the updated headers
 const VIDEO_API_URL = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const videoApi = axios.create({
     baseURL: VIDEO_API_URL,
@@ -24,15 +25,26 @@ videoApi.interceptors.request.use(function(config) {
     return Promise.reject(error);
 });
 
-videoApi.interceptors.response.use(response => response, error => {
-    if (error.response && error.response.status === 401 && !error.config._retry) {
-        error.config._retry = true; // Mark the request as retried
-        // Automatically retry the request assuming the refresh has occurred via HttpOnly cookie
-        return videoApi(error.config); // Retry the original request
+videoApi.interceptors.response.use(response => response, async error => {
+    const originalRequest = error.config;
+    if (error.response.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true; // Mark the request as retried
+        // No need to manually refresh the token, rely on the HttpOnly cookie
+        try {
+            // Make a call to a designated refresh endpoint that expects the refresh token as a cookie
+            await axios.post(`${API_URL}/api/dj-rest-auth/token/refresh/`, {}, { withCredentials: true });
+            // If the refresh is successful, retry the original request
+            const newToken = sessionStorage.getItem('jwtToken'); // Assuming the new token is now stored in sessionStorage
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+            return videoApi(originalRequest);
+        } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            // Redirect to login or handle failure
+            return Promise.reject(refreshError);
+        }
     }
-    return Promise.reject(error); // If the retry fails, or if it's not a 401, reject the promise
+    return Promise.reject(error);
 });
-
 /*
 videoApi.interceptors.response.use(async (response) => {
     return response;
