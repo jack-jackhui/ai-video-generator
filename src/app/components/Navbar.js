@@ -341,17 +341,22 @@ export default function Navbar() {
         */
             const response = await authApi.post(endpoint, body);
             //console.log(response);
-            loginUser(response.data.access);
+            //loginUser(body);
 
             // Handle success. Maybe set authentication tokens, redirect, etc.
-            //setIsAuthenticated(true);
-            //console.log(isAuthenticated);
-            setLoginMessage('Successful');
-            toast.success("Login successful");
-            window.dispatchEvent(new Event('login'));
-            setShowLoginModal(false);
-            onOpenChange(false); // Close modal on success
-            router.push('/videoGen'); // Redirect to another route if needed
+            if (response.status === 200 || (isSignUp && response.status === 201)) {
+                const { key } = response.data;
+                localStorage.setItem('authToken', key);
+                authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
+                setIsAuthenticated(true);
+                //console.log(isAuthenticated);
+                setLoginMessage('Successful');
+                toast.success("Login successful");
+                window.dispatchEvent(new Event('login'));
+                setShowLoginModal(false);
+                onOpenChange(false); // Close modal on success
+                router.push('/videoGen'); // Redirect to another route if needed
+            }
         } catch (error) {
             const errorData = error.response.data;
             let errors = { email: '', password: '', password1: '', password2: '', nonFieldErrors: '' };

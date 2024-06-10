@@ -39,60 +39,59 @@ export const AuthProvider = ({ children }) => {
 
      */
     const verifyAuthentication = async () => {
-        try {
-            // Retrieve the token from session storage
-            const jwtToken = sessionStorage.getItem('jwtToken');
-            // Verify the token by sending it to the backend
-            const response = await authApi.post('/api/dj-rest-auth/token/verify/', {
-                token: jwtToken
-            });
-
-            // Check if the token is still valid
-            if (response.status === 200) {
-                setIsAuthenticated(true);
-            } else {
-                throw new Error("Token verification failed");
-            }
-        } catch (error) {
-            if (error.response && [401, 403].includes(error.response.status)) {
+        if (isAuthenticated) {
+            try {
+                // Attempt to fetch a protected route or user info
+                const response = await authApi.get('/api/dj-rest-auth/user/'); // This should be an endpoint that requires authentication
+                if (response.status === 200) {
+                    setIsAuthenticated(true);
+                } else {
+                    throw new Error("Not authenticated");
+                }
+            } catch (error) {
+                console.error('Error verifying authentication:', error);
                 setIsAuthenticated(false);
-                sessionStorage.removeItem('jwtToken'); // Clear token if it's invalid
-                console.error('Token is invalid:', error);
-            } else {
-                console.error('Error verifying token:', error);
             }
+        } else {
+            console.log("Not authenticated.");
         }
     };
 
     useEffect(() => {
-        // Check for JWT token in session storage on initial load
-        const jwtToken = sessionStorage.getItem('jwtToken');
-        //console.log(jwtToken);
-        if (jwtToken) {
-            authApi.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
-            verifyAuthentication();
-        }
+        // Check authentication status when component mounts
+        verifyAuthentication();
     }, []);
 
 
-    const loginUser = async (token) => {
-        sessionStorage.setItem('jwtToken', token);
-        //console.log(token);
-        /*
-        if (token.refresh) {
-            sessionStorage.setItem('refreshToken', token.refresh);
-        }
+    const loginUser = async (credentials) => {
+        try {
+            // Perform the login request using the user's credentials
+            const response = await authApi.post('/api/dj-rest-auth/login/', credentials);
 
-         */
-        authApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        verifyAuthentication();
+            if (response.status === 200) {
+                // If login is successful, verify authentication to update UI
+                const { key } = response.data;
+                localStorage.setItem('authToken', key);  // You can use localStorage if you prefer
+                authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
+                setIsAuthenticated(true);  // Directly update state based on login success
+                //verifyAuthentication();
+            } else {
+                // If the server responds with an error (not 200 OK), handle it appropriately
+                throw new Error("Login failed with status: " + response.status);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            toast.error("Login failed. Please check your credentials.");
+            setIsAuthenticated(true);  // Directly update state based on login success
+        }
     };
 
     const logoutUser = async () => {
         try {
-            await fetchCSRFToken();
+            //await fetchCSRFToken();
             await authApi.post('/api/dj-rest-auth/logout/');
-            sessionStorage.removeItem('jwtToken');
+            localStorage.removeItem('authToken');
+            authApi.defaults.headers.common['Authorization'] = null;
             setIsAuthenticated(false);
             toast.success("Logout successful!")
             router.push('/'); // Redirect to home page

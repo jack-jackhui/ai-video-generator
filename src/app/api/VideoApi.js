@@ -1,7 +1,8 @@
 import axios from 'axios';
+//import {authApi} from "./AuthApi";
 //import { refreshAccessToken } from './AuthApi';  // Import authApi to get the updated headers
 const VIDEO_API_URL = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+//const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const videoApi = axios.create({
     baseURL: VIDEO_API_URL,
@@ -11,62 +12,31 @@ const videoApi = axios.create({
     }
 });
 
-
-// Axios Interceptor to add JWT token from session storage to each request
-videoApi.interceptors.request.use(function(config) {
-    // Retrieve JWT token from session storage
-    const jwtToken = sessionStorage.getItem('jwtToken');
-    if (jwtToken) {
-        config.headers['Authorization'] = `Bearer ${jwtToken}`;
+// Use interceptor to add the token to every request
+videoApi.interceptors.request.use(config => {
+    // Get the token from storage
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        config.headers['Authorization'] = `Token ${token}`;  // Adjust this according to the type of token you use (e.g., Bearer)
     }
     return config;
-}, function(error) {
-    // Handle any errors that occur during the setup of the request
+}, error => {
     return Promise.reject(error);
 });
 
+// Use interceptor to handle errors globally
 videoApi.interceptors.response.use(response => response, async error => {
-    const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true; // Mark the request as retried
-        // No need to manually refresh the token, rely on the HttpOnly cookie
+    // Handle unauthorized error (session expired or logged out)
+    if (error.response.status === 401 && !error.config._retry) {
+        error.config._retry = true;
         try {
-            // Make a call to a designated refresh endpoint that expects the refresh token as a cookie
-            const refreshResponse = await axios.post(`${API_URL}/api/token-refresh/`, {}, { withCredentials: true });
-            const newToken = refreshResponse.data.access;
-            sessionStorage.setItem('jwtToken', newToken); // Store the new token
-            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-            return videoApi(originalRequest);
+            // You might want to redirect to a login page or show a login modal here
+            console.error('Session expired, please log in again.');
+            // Redirect or handle session expiration logic here
         } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-            // Redirect to login or handle failure
-            return Promise.reject(refreshError);
+            console.error('Session refresh failed:', refreshError);
         }
     }
     return Promise.reject(error);
 });
-/*
-videoApi.interceptors.response.use(async (response) => {
-    return response;
-}, async (error) => {
-    const originalRequest = error.config;
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true;  // Mark the request as retried
-
-        try {
-            await refreshAccessToken();  // Attempt to refresh the token
-            const newToken = sessionStorage.getItem('jwtToken');  // Get the new token
-            if (newToken) {
-                originalRequest.headers['Authorization'] = `Bearer ${newToken}`;  // Update the authorization header
-                return videoApi(originalRequest);  // Retry the original request with the new token
-            }
-        } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-            // Handle failed refresh here (e.g., redirect to login)
-        }
-    }
-    return Promise.reject(error);  // Return the error if not a 401 or if it has been retried already
-});
-
- */
 export default videoApi;

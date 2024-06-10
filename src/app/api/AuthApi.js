@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+//import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -13,6 +13,17 @@ const authApi = axios.create({
     }
 });
 
+// Configure axios to include the token in all requests
+authApi.interceptors.request.use(config => {
+    const token = sessionStorage.getItem('authToken');
+    if (token) {
+        config.headers['Authorization'] = `Token ${token}`;
+    }
+    return config;
+}, error => {
+    return Promise.reject(error);
+});
+
 // Dynamically set CSRF token for each request
 authApi.interceptors.request.use((config) => {
     const csrfToken = Cookies.get('csrftoken');
@@ -24,17 +35,15 @@ authApi.interceptors.request.use((config) => {
 
 // Use interceptor to handle errors globally
 authApi.interceptors.response.use(response => response, async error => {
+    // Handle unauthorized error (session expired or logged out)
     if (error.response.status === 401 && !error.config._retry) {
         error.config._retry = true;
         try {
-            // Attempt to refresh the token using the refresh token cookie automatically sent by the browser
-            const response = await axios.post(`${API_URL}/api/token-refresh/`, {}, { withCredentials: true });
-            sessionStorage.setItem('jwtToken', response.data.access);  // Update the access token in sessionStorage
-            authApi.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
-            return authApi(error.config);  // Retry the original request with the new token
+            // You might want to redirect to a login page or show a login modal here
+            console.error('Session expired, please log in again.');
+            // Redirect or handle session expiration logic here
         } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-            // Handle failed refresh here (e.g., redirect to login)
+            console.error('Session refresh failed:', refreshError);
         }
     }
     return Promise.reject(error);
