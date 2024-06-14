@@ -27,6 +27,7 @@ authApi.interceptors.request.use(config => {
 // Dynamically set CSRF token for each request
 authApi.interceptors.request.use((config) => {
     const csrfToken = Cookies.get('csrftoken');
+    //console.log("csrfToken: " + csrfToken);
     if (csrfToken) {
         config.headers['X-CSRFToken'] = csrfToken;
     }
@@ -103,11 +104,12 @@ const fetchCSRFToken = async () => {
         console.error('Failed to fetch CSRF token:', error);
     }
 };
-/*
+
 const initializeAuth = async () => {
     // Setting token on initial load only if in browser environment
     if (typeof window !== "undefined") {
         await fetchCSRFToken();
+        /*
         const jwtToken = sessionStorage.getItem('jwtToken');
         if (jwtToken) {
             console.log("JWT token found, setting authorization header...");
@@ -117,11 +119,12 @@ const initializeAuth = async () => {
         } else {
             console.log("No JWT token found in session storage.");
         }
+
+         */
     } else {
         console.log("initializeAuth skipped: not running in a browser environment.");
     }
 };
 
- */
 
-export { authApi, fetchCSRFToken };
+export { authApi, fetchCSRFToken, initializeAuth };
