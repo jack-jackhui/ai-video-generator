@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
                 if (response.status === 200) {
                     setIsAuthenticated(true);
                 } else {
-                    throw new Error("Not authenticated");
+                    throw new Error("Fail to authenticate");
                 }
             } catch (error) {
                 console.error('Error verifying authentication:', error);
@@ -58,6 +58,12 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
+        // Initialize CSRF token
+        fetchCSRFToken().then(() => {
+            console.log("CSRF token initialized.");
+        }).catch(error => {
+            console.error("Failed to initialize CSRF token:", error);
+        });
         // Check authentication status when component mounts
         verifyAuthentication();
     }, []);
@@ -88,7 +94,7 @@ export const AuthProvider = ({ children }) => {
 
     const logoutUser = async () => {
         try {
-            //await fetchCSRFToken();
+            await fetchCSRFToken();
             await authApi.post('/api/dj-rest-auth/logout/');
             localStorage.removeItem('authToken');
             authApi.defaults.headers.common['Authorization'] = null;

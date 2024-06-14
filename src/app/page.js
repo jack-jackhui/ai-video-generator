@@ -1,17 +1,20 @@
 // app/page.js
-"use client";
+//"use client";
 import * as React from "react";
-import {useEffect} from "react";
+//import {useEffect} from "react";
 import {NextUIProvider} from "../lib/NextUi";
 //import {AuthProvider} from "./context/AuthContext";
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Footer from './components/Footer';
-import { initializeAuth } from './api/AuthApi'
+//import { initializeAuth } from './api/AuthApi'
 export default function Page() {
+    /*
     useEffect(() => {
         initializeAuth();
     }, []);
+
+     */
 
     return (
         <NextUIProvider>

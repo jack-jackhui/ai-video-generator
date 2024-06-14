@@ -105,11 +105,12 @@ const fetchCSRFToken = async () => {
     }
 };
 
+/*
 const initializeAuth = async () => {
     // Setting token on initial load only if in browser environment
     if (typeof window !== "undefined") {
         await fetchCSRFToken();
-        /*
+
         const jwtToken = sessionStorage.getItem('jwtToken');
         if (jwtToken) {
             console.log("JWT token found, setting authorization header...");
@@ -119,12 +120,11 @@ const initializeAuth = async () => {
         } else {
             console.log("No JWT token found in session storage.");
         }
-
-         */
     } else {
         console.log("initializeAuth skipped: not running in a browser environment.");
     }
 };
+*/
 
 
-export { authApi, fetchCSRFToken, initializeAuth };
+export { authApi, fetchCSRFToken };
