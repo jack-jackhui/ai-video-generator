@@ -80,6 +80,8 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('authToken', key);  // You can use localStorage if you prefer
                 authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
                 setIsAuthenticated(true);  // Directly update state based on login success
+                toast.success("Login successful");
+                router.push('/videoGen'); // Redirect to another route if needed
                 //verifyAuthentication();
             } else {
                 // If the server responds with an error (not 200 OK), handle it appropriately

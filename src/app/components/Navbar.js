@@ -45,6 +45,8 @@ export default function Navbar() {
     const backdrop = "blur";
 
     const [isSignUp, setIsSignUp] = useState(false);
+    const [registrationSuccess, setRegistrationSuccess] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -240,6 +242,8 @@ export default function Navbar() {
         password2: '',
         nonFieldErrors: '', // For general errors not tied to a specific field
     });
+
+    /* Old form submit function
     const handleSubmit = async () => {
         let endpoint, body;
 
@@ -254,25 +258,7 @@ export default function Navbar() {
 
         if (isSignUp) {
             // If signing up, include both password1 and password2 fields
-            /*
-            endpoint = `${backendUrl}/api/dj-rest-auth/registration/`;
-            body = JSON.stringify({
-                username: formData.email, // Optionally use email as username or generate a unique username
-                email: formData.email,
-                password1: formData.password,
-                password2: formData.password, // Assuming you have a state to capture password confirmation
-            });
-        } else {
-            // If logging in, include the username field with the email as its value
-            endpoint = `${backendUrl}/api/dj-rest-auth/login/`;
-            body = JSON.stringify({
-                username: formData.email, // Send email as username for login
-                password: formData.password,
-            });
-        }
-        //console.log("==============", body);
 
-             */
             endpoint = '/api/dj-rest-auth/registration/';
             body = {
                 username: formData.email, // Optionally use email as username or generate a unique username
@@ -290,55 +276,6 @@ export default function Navbar() {
         }
 
         try {
-            /*
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: body,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                let errors = { email: '', password: '', password1: '', password2: '', nonFieldErrors: '' };
-
-                // Handle non-field errors
-                if (errorData.non_field_errors) {
-                    errors.nonFieldErrors = errorData.non_field_errors.join(' '); // Assuming it's an array
-                }
-
-                // Handle field-specific errors if errorData is not an array
-                if (!Array.isArray(errorData)) {
-                    Object.keys(errorData).forEach(key => {
-                        // Join error messages if they're in an array
-                        errors[key] = Array.isArray(errorData[key]) ? errorData[key].join(' ') : errorData[key];
-                    });
-                }
-
-                setFormErrors(errors);
-                //console.log("___", formErrors); // Update the state with the errors
-                return; // Stop execution
-            }
-
-            const data = await response.json();
-            //console.log(data); // Handle success. Maybe set authentication tokens, redirect, etc.
-
-            localStorage.setItem('authToken', data.access); // Store the token or sessionToken as per your backend response
-            //console.log(setIsAuthenticated);
-            setIsAuthenticated(true);
-            //setIsLoggedIn(true);
-            setLoginMessage('Successful');
-            toast.success("Login successful");
-            window.dispatchEvent(new Event('login'));
-            setShowLoginModal(false);
-            onOpenChange(false); // Close modal on success
-            //router.push('/videoGen');
-        } catch (error) {
-            console.error('Error:', error);
-            setFormErrors({ nonFieldErrors: 'An error occurred. Please try again.' });
-        }
-        */
             const response = await authApi.post(endpoint, body);
             //console.log(response);
             //loginUser(body);
@@ -380,6 +317,102 @@ export default function Navbar() {
         }
     };
 
+    */
+
+    const handleSubmit = async () => {
+        setIsLoading(true); // Start loading when the request starts
+        let endpoint, body;
+        const isSignUpProcess = isSignUp;  // Capture the state at the time of function call to use later in async operations
+
+        // Reset form errors state on each submission attempt
+        setFormErrors({
+            email: '',
+            password: '',
+            password1: '',
+            password2: '',
+            nonFieldErrors: '',
+        });
+
+        endpoint = isSignUpProcess ? '/api/dj-rest-auth/registration/' : '/api/dj-rest-auth/login/';
+        body = isSignUpProcess ? {
+            username: formData.email,
+            email: formData.email,
+            password1: formData.password,
+            password2: formData.password,
+        } : {
+            username: formData.email,
+            password: formData.password,
+        };
+
+        try {
+            const response = await authApi.post(endpoint, body);
+
+            if (response.status === 204 && isSignUpProcess) {
+                // Registration successful, but needs email verification
+                setLoginMessage('Registration successful! Please check your email to verify your account.');
+                toast.success("Registration successful! Please check your email to verify your account.");
+                setIsLoading(false); // Stop loading on success
+                //setShowLoginModal(false); // Optionally close the modal or redirect
+                setRegistrationSuccess(true);
+            } else if (response.status === 200) {
+                // Handle login success if this is part of the login process
+                const { key } = response.data;
+                localStorage.setItem('authToken', key);
+                authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
+                setIsAuthenticated(true);
+                //console.log(isAuthenticated);
+                setLoginMessage('Successful');
+                toast.success("Login successful");
+                window.dispatchEvent(new Event('login'));
+                setShowLoginModal(false);
+                //onOpenChange(false); // Close modal on success
+                router.push('/videoGen'); // Redirect to another route if needed
+            }
+        } catch (error) {
+            setIsLoading(false); // Stop loading on error
+            if (error.response) {
+                const errorData = error.response.data;
+                let errors = {
+                    email: '',
+                    username: '',
+                    password: '',
+                    password1: '',
+                    password2: '',
+                    nonFieldErrors: '',
+                };
+
+                // Handle non-field errors
+                if (errorData.non_field_errors) {
+                    errors.nonFieldErrors = errorData.non_field_errors.join(' ');
+                }
+
+                // Handle field-specific errors
+                // Loop through errorData to find field-specific errors
+                for (const [key, value] of Object.entries(errorData)) {
+                    if (errors.hasOwnProperty(key)) { // Ensures only predefined fields are populated
+                        errors[key] = value.join(' '); // Join array of messages into a single string
+                    }
+                }
+
+                setFormErrors(errors);
+                toast.error("Please correct the errors and try again.");
+            } else {
+                // Network error or no response from the server
+                toast.error("Network error or no response from the server.");
+            }
+        }
+    };
+
+    const resendVerificationEmail = async () => {
+        try {
+            const response = await authApi.post('/api/dj-rest-auth/registration/resend-email/', { email: formData.email });
+            if (response.status === 200) {
+                toast.success('Verification email resent. Please check your inbox.');
+            }
+        } catch (error) {
+            toast.error('Failed to resend verification email.');
+        }
+    };
     const handleGoogleLoginClick = () => {
         if (window.googleLoaded) {
             initGoogleSignIn();
@@ -631,8 +664,10 @@ export default function Navbar() {
                                     label="Email"
                                     placeholder="Enter your email"
                                     variant="bordered"
+                                    error={!!formErrors.email || !!formErrors.username}
                                 />
                                 {formErrors.username && <p className="text-red-500">{formErrors.username}</p>}
+                                {formErrors.email && <p className="text-red-500">{formErrors.email}</p>}
                                 <Input
                                     value={formData.password}
                                     onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -668,12 +703,26 @@ export default function Navbar() {
                         </ModalBody>
                         <ModalFooter>
                             <div style={{width: '100%', textAlign: 'center', padding: '20px'}}>
-                                <Button color="primary" onPress={handleSubmit}
-                                        className="w-full capitalize mb-3 bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg">
+                                <Button isLoading={isLoading} color="primary" onPress={handleSubmit}
+                                        className="w-full capitalize mb-3 bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg"
+                                        spinner={
+                                            <svg className="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                                <path className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"/>
+                                            </svg>
+                                        }
+                                >
                                     {isSignUp ? "Sign up" : "Sign in"}
                                 </Button>
                                 {loginMessage && <p>{loginMessage}</p>}
                                 {formErrors.nonFieldErrors && <p className="text-red-500">{formErrors.nonFieldErrors}</p>}
+                                {/* Conditional display of resend verification email button */}
+                                {registrationSuccess && (
+                                    <Button color="success" flat auto onPress={resendVerificationEmail}
+                                            className="mt-4">
+                                        Resend Verification Email
+                                    </Button>
+                                )}
                                 <p>
                                     {isSignUp ? (
                                         <>
