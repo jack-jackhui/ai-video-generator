@@ -13,6 +13,7 @@ import {Button, Card, CardBody, CardFooter, CardHeader,
     ModalBody,
     ModalFooter, CircularProgress
 } from "@nextui-org/react";
+import toast from "react-hot-toast";
 
 export default function FaceSwap() {
     const apiUrl = process.env.NEXT_PUBLIC_FACE_SWAP_API_URL;
@@ -47,16 +48,22 @@ export default function FaceSwap() {
         try {
             const response = await fetch(`${apiUrl}/task-status/${taskId}`);
             const data = await response.json();
-            if (response.ok && data.status !== 'In progress') {
+            if (response.ok && data.status !== 'In progress' && data.status !== 'Failed') {
                 //console.log(data.status);
                 setIsLoading(false);
                 setFeedbackMessage('Process ' + data.status);
                 setDownloadUrl(`${apiUrl}/downloads/${taskId}/${target_files[activeCardKey]}`);
                 setTaskId(null);  // Reset task ID after completion
+            } else if (data.status == 'Failed') {
+                setIsLoading(false);
+                setFeedbackMessage('Process ' + data.status);
+                toast.error("Swap Failed! Please try again.")
+                setTaskId(null);
             }
         } catch (error) {
             console.error('Error checking task status:', error);
             setIsLoading(false);
+            toast.error("Swap Failed! Please try again.")
         }
     };
     const toggleUploadModal = (key) => {
@@ -143,7 +150,7 @@ export default function FaceSwap() {
                                 <CardBody>
                                     <iframe
                                         className="w-full h-full"  // Ensures the iframe fills the container
-                                        src="https://player.bilibili.com/player.html?aid=1104352221&bvid=BV1Yw4m197RP&cid=1541084995&p=1"
+                                        src="https://player.bilibili.com/player.html?aid=1104352221&bvid=BV1Yw4m197RP&cid=1541084995&p=1&autoplay=0"
                                         title="Leonardo Dicaprio - The Great Gatsby"
                                         frameBorder="0"
                                         allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -179,7 +186,7 @@ export default function FaceSwap() {
                             <CardBody>
                                 <iframe
                                     className="w-full h-full"  // Ensures the iframe fills the container
-                                    src="https://player.bilibili.com/player.html?bvid=BV1gm421u753&cid=1541078218&page=1"
+                                    src="https://player.bilibili.com/player.html?bvid=BV1gm421u753&cid=1541078218&page=1&autoplay=0"
                                     title="Robert Downey Jr - Iron Man"
                                     frameBorder="0"
                                     allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -215,7 +222,7 @@ export default function FaceSwap() {
                             <CardBody>
                                 <iframe
                                     className="w-full h-full"  // Ensures the iframe fills the container
-                                    src="https://player.bilibili.com/player.html?aid=1604300326&bvid=BV1Jm421p7g8&cid=1541089940&p=1"
+                                    src="https://player.bilibili.com/player.html?aid=1604300326&bvid=BV1Jm421p7g8&cid=1541089940&p=1&autoplay=0"
                                     title="Sun Li - Zhen Huan"
                                     frameBorder="0"
                                     allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -251,7 +258,7 @@ export default function FaceSwap() {
                             <CardBody>
                                 <iframe
                                     className="w-full h-full"  // Ensures the iframe fills the container
-                                    src="https://player.bilibili.com/player.html?aid=1004425596&bvid=BV1Hx4y1i7dL&cid=1541084810&p=1"
+                                    src="https://player.bilibili.com/player.html?aid=1004425596&bvid=BV1Hx4y1i7dL&cid=1541084810&p=1&autoplay=0"
                                     title="Chow Yun Fat - A Better Tomorrow"
                                     frameBorder="0"
                                     allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
