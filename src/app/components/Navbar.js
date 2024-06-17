@@ -366,7 +366,7 @@ export default function Navbar() {
                 window.dispatchEvent(new Event('login'));
                 setShowLoginModal(false);
                 //onOpenChange(false); // Close modal on success
-                router.push('/videoGen'); // Redirect to another route if needed
+                //router.push('/videoGen'); // Redirect to another route if needed
             }
         } catch (error) {
             setIsLoading(false); // Stop loading on error

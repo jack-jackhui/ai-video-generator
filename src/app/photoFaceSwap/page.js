@@ -13,6 +13,7 @@ import {Button, Card, CardBody, CardFooter, CardHeader,
     ModalBody,
     ModalFooter, CircularProgress
 } from "@nextui-org/react";
+import toast from "react-hot-toast";
 
 export default function Page() {
     const apiUrl = process.env.NEXT_PUBLIC_FACE_SWAP_API_URL;
@@ -45,16 +46,22 @@ export default function Page() {
         try {
             const response = await fetch(`${apiUrl}/task-status/${taskId}`);
             const data = await response.json();
-            if (response.ok && data.status !== 'In progress') {
+            if (response.ok && data.status !== 'In progress' && data.status !== 'Failed' ) {
                 //console.log(data.status);
                 setIsLoading(false);
                 setFeedbackMessage('Process ' + data.status);
                 setDownloadUrl(`${apiUrl}/downloads/${taskId}/${targetFile.name}`);
                 setTaskId(null);  // Reset task ID after completion
+            } else if (data.status == 'Failed') {
+                setIsLoading(false);
+                setFeedbackMessage('Process ' + data.status);
+                toast.error("Swap Failed! Please try again.")
+                setTaskId(null);
             }
         } catch (error) {
             console.error('Error checking task status:', error);
             setIsLoading(false);
+            toast.error("Swap Failed! Please try again.")
         }
     };
     const toggleUploadModal = () => {
