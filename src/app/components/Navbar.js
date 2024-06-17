@@ -538,8 +538,8 @@ export default function Navbar() {
                                 description="AI Video Face Swap"
                                 startContent={icons.user}
                             >
-                                <NextLink href="/faceSwap">
-                                Video Face Swap
+                                <NextLink href="/faceSwap" passHref>
+                                        Video Face Swap
                                 </NextLink>
                             </DropdownItem>
                             <DropdownItem
@@ -547,7 +547,7 @@ export default function Navbar() {
                                 description="AI Photo Face Swap."
                                 startContent={icons.activity}
                             >
-                                <NextLink href="/photoFaceSwap">
+                                <NextLink href="/photoFaceSwap" passHref>
                                 Photo Face Swap
                                 </NextLink>
                             </DropdownItem>
