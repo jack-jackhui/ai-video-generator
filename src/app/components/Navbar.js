@@ -486,6 +486,12 @@ export default function Navbar() {
         user: <TagUser className="text-danger" fill="currentColor" size={30} />,
     };
 
+    const getTokenFromLocalStorage = () => {
+        return localStorage.getItem('authToken');
+    };
+
+    const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL;
+
     return (
         <nav className="bg-transparent">
 
@@ -554,8 +560,15 @@ export default function Navbar() {
                         </DropdownMenu>
                     </Dropdown>
 
+                    {isAuthenticated ? (
+                    <NextLink href={`${chatbotUrl}/?token=${getTokenFromLocalStorage()}`} passHref className="cursor-pointer">
+                        AI Slide Deck Generator
+                        </NextLink>
+                        ) : (
+                        <a onClick={handleLoginLogout} className="cursor-pointer">AI Slide Deck Generator</a>
+                        )}
                     <a href="#" >For Developers (API)</a>
-                    <a href="#" >Tools</a>
+
                 </div>
                 <div className="hidden flex-grow md:flex items-center justify-end">
                     {isAuthenticated ? (
