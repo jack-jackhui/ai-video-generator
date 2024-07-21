@@ -29,6 +29,7 @@ import {ChevronDown, Lock, Activity, Flash, Server, TagUser, Scale} from "./Icon
 import toast, { Toaster } from 'react-hot-toast';
 export default function Navbar() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL;
     //console.log(backendUrl);
     //useGoogleIdentityServices()
     //useGoogleApi();
@@ -489,8 +490,6 @@ export default function Navbar() {
     const getTokenFromLocalStorage = () => {
         return localStorage.getItem('authToken');
     };
-
-    const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL;
 
     return (
         <nav className="bg-transparent">
