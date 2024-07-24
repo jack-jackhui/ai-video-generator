@@ -33,7 +33,7 @@ export default function Navbar() {
     //console.log(backendUrl);
     //useGoogleIdentityServices()
     //useGoogleApi();
-    const { isAuthenticated, setIsAuthenticated, loginUser, logoutUser, showLoginModal, setShowLoginModal } = useAuth();
+    const { isAuthenticated, setIsAuthenticated, loginUser, logoutUser, showLoginModal, setShowLoginModal, verifyAuthentication } = useAuth();
     const router = useRouter();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -354,6 +354,8 @@ export default function Navbar() {
                 toast.success("Registration successful! Please check your email to verify your account.");
                 setIsLoading(false); // Stop loading on success
                 //setShowLoginModal(false); // Optionally close the modal or redirect
+                setFormData({ email: '', password: '' }); // Reset form data
+                verifyAuthentication(); // Additional function to verify authentication status
                 setRegistrationSuccess(true);
             } else if (response.status === 200) {
                 // Handle login success if this is part of the login process
@@ -366,6 +368,7 @@ export default function Navbar() {
                 toast.success("Login successful");
                 window.dispatchEvent(new Event('login'));
                 setShowLoginModal(false);
+                verifyAuthentication();
                 //onOpenChange(false); // Close modal on success
                 //router.push('/videoGen'); // Redirect to another route if needed
             }
