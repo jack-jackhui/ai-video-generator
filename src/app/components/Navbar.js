@@ -4,7 +4,7 @@ import React from "react";
 import { authApi } from '../api/AuthApi';
 import { useRouter } from 'next/navigation';
 import { useAuth } from "../context/AuthContext";
-import {useState, useEffect, useRef} from "react";
+import {useState, useEffect, useRef, useCallback} from "react";
 import {
     Divider,
     Modal,
@@ -320,7 +320,8 @@ export default function Navbar() {
 
     */
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setIsLoading(true); // Start loading when the request starts
         let endpoint, body;
         const isSignUpProcess = isSignUp;  // Capture the state at the time of function call to use later in async operations
@@ -538,26 +539,22 @@ export default function Navbar() {
                             aria-label="FaceSwap features"
                             className="w-[340px]"
                             itemClasses={{
-                                base: "gap-4",
+                                base: "gap-1",
                             }}
                         >
                             <DropdownItem
                                 key="VideoFaceSwap"
-                                description="AI Video Face Swap"
                                 startContent={icons.user}
+                                href="/faceSwap"
                             >
-                                <NextLink href="/faceSwap" passHref>
-                                        Video Face Swap
-                                </NextLink>
+                                Video Face Swap
                             </DropdownItem>
                             <DropdownItem
                                 key="PhotoFaceSwap"
-                                description="AI Photo Face Swap."
                                 startContent={icons.activity}
+                                href="/photoFaceSwap"
                             >
-                                <NextLink href="/photoFaceSwap" passHref>
                                 Photo Face Swap
-                                </NextLink>
                             </DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
@@ -641,7 +638,7 @@ export default function Navbar() {
                         }
                     }}
                 >
-                    <ModalContent>
+                    <ModalContent as="form" onSubmit={handleSubmit}>
                         <ModalHeader className="flex flex-col gap-1 items-center">
                             <h3 className="text-lg font-bold">{isSignUp ? "Create a new account" : "Log in"}</h3>
                         </ModalHeader>
