@@ -183,6 +183,11 @@ export default function Navbar() {
     const handleLoginLogout = async () => {
         if (isAuthenticated) {
             logoutUser();
+            setIsLoading(false);
+            setFormData({
+                email: '',
+                password: '',
+            });
             //await handleLogout();
         } else {
             setShowLoginModal(true);
@@ -715,7 +720,7 @@ export default function Navbar() {
                         </ModalBody>
                         <ModalFooter>
                             <div style={{width: '100%', textAlign: 'center', padding: '20px'}}>
-                                <Button isLoading={isLoading} color="primary" onPress={handleSubmit}
+                                <Button isLoading={isLoading} color="primary" type="submit"
                                         className="w-full capitalize mb-3 bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg"
                                         spinner={
                                             <svg className="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
