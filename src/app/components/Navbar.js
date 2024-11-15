@@ -30,6 +30,7 @@ import toast, { Toaster } from 'react-hot-toast';
 export default function Navbar() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL;
+    const mynotebooklmUrl = process.env.NEXT_PUBLIC_MYNOTEBOOKLM_URL;
     //console.log(backendUrl);
     //useGoogleIdentityServices()
     //useGoogleApi();
@@ -571,7 +572,13 @@ export default function Navbar() {
                         ) : (
                         <a onClick={handleLoginLogout} className="cursor-pointer">AI Slide Deck Generator</a>
                         )}
-                    <a href="#" >For Developers (API)</a>
+                    {isAuthenticated ? (
+                        <NextLink href={`${mynotebooklmUrl}/?token=${getTokenFromLocalStorage()}`} passHref className="cursor-pointer">
+                            MyNoteBookLM
+                        </NextLink>
+                    ) : (
+                        <a onClick={handleLoginLogout} className="cursor-pointer">MyNoteBookLM</a>
+                    )}
 
                 </div>
                 <div className="hidden flex-grow md:flex items-center justify-end">
