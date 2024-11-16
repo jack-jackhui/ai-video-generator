@@ -566,14 +566,15 @@ export default function Navbar() {
                     </Dropdown>
 
                     {isAuthenticated ? (
-                    <NextLink href={`${chatbotUrl}/?token=${getTokenFromLocalStorage()}`} passHref className="cursor-pointer">
+                    <NextLink href={`${chatbotUrl}/?token=${getTokenFromLocalStorage()}`} className="cursor-pointer">
                         AI Slide Deck Generator
-                        </NextLink>
+                    </NextLink>
                         ) : (
                         <a onClick={handleLoginLogout} className="cursor-pointer">AI Slide Deck Generator</a>
                         )}
+
                     {isAuthenticated ? (
-                        <NextLink href={`${mynotebooklmUrl}/?token=${getTokenFromLocalStorage()}`} passHref className="cursor-pointer">
+                        <NextLink href={`${mynotebooklmUrl}/?token=${getTokenFromLocalStorage()}`} className="cursor-pointer">
                             MyNoteBookLM
                         </NextLink>
                     ) : (
