@@ -594,26 +594,94 @@ export default function Navbar() {
                     )}
                 </div>
                 {/* Mobile Menu */}
-                <div className={`${mobileMenuOpen ? 'fixed inset-0' : 'hidden'} bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center space-y-4 md:hidden`}>
-                    <NextLink href="/" className="text-xl">Home</NextLink>
-                    <NextLink href="/dashboard" className="text-xl">Dashboard</NextLink>
-                    <NextLink href="/videoGen" className="text-xl">AI Video Generator</NextLink>
-                    <NextLink href="/faceSwap" className="text-xl">AI FaceSwap</NextLink>
-                    <NextLink href="/photoFaceSwap" className="text-xl">AI Photo FaceSwap</NextLink>
-                    <a href="#" className="text-xl">For Developers (API)</a>
-                    <a href="#" className="text-xl">Tools</a>
+                {/* Mobile Menu */}
+                <div
+                    className={`${
+                        mobileMenuOpen ? "fixed inset-0" : "hidden"
+                    } bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center space-y-4 md:hidden`}
+                >
+                    <NextLink href="/" className="text-xl">
+                        Home
+                    </NextLink>
+                    <NextLink href="/dashboard" className="text-xl">
+                        Dashboard
+                    </NextLink>
+                    <NextLink href="/videoGen" className="text-xl">
+                        AI Video Generator
+                    </NextLink>
+                    <Dropdown>
+                        <DropdownTrigger>
+                            <Button
+                                disableRipple
+                                className="text-lg p-0 bg-transparent data-[hover=true]:bg-transparent"
+                                endContent={icons.chevron}
+                                radius="sm"
+                                variant="light"
+                            >
+                                AI FaceSwap
+                            </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                            aria-label="FaceSwap features"
+                            className="w-[340px]"
+                            itemClasses={{
+                                base: "gap-1",
+                            }}
+                        >
+                            <DropdownItem
+                                key="VideoFaceSwap"
+                                startContent={icons.user}
+                                href="/faceSwap"
+                            >
+                                Video Face Swap
+                            </DropdownItem>
+                            <DropdownItem
+                                key="PhotoFaceSwap"
+                                startContent={icons.activity}
+                                href="/photoFaceSwap"
+                            >
+                                Photo Face Swap
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+
                     {isAuthenticated ? (
-                        <Button onPress={handleLoginLogout} color="warning" variant="ghost">
-                            Logout
-                        </Button>
+                        <NextLink
+                            href={`${chatbotUrl}/?token=${getTokenFromLocalStorage()}`}
+                            className="cursor-pointer text-xl"
+                        >
+                            AI Slide Deck Generator
+                        </NextLink>
                     ) : (
-                        <Button onPress={handleLoginLogout} color="warning" variant="ghost">
-                            Login
-                        </Button>
+                        <a onClick={handleLoginLogout} className="cursor-pointer text-xl">
+                            AI Slide Deck Generator
+                        </a>
                     )}
-                    <button onClick={() => setMobileMenuOpen(false)} className="text-white p-2">
+
+                    {isAuthenticated ? (
+                        <NextLink
+                            href={`${mynotebooklmUrl}/?token=${getTokenFromLocalStorage()}`}
+                            className="cursor-pointer text-xl"
+                        >
+                            MyNoteBookLM
+                        </NextLink>
+                    ) : (
+                        <a onClick={handleLoginLogout} className="cursor-pointer text-xl">
+                            MyNoteBookLM
+                        </a>
+                    )}
+
+                    <button
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-white p-2"
+                    >
                         <svg className="w-8 h-8" fill="none" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                     </button>
                 </div>
