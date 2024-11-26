@@ -355,7 +355,7 @@ export default function Navbar() {
         try {
             const response = await authApi.post(endpoint, body);
 
-            if (response.status === 204 && isSignUpProcess) {
+            if ((response.status === 204 || response.status === 200 || response.status === 201) && isSignUpProcess) {
                 // Registration successful, but needs email verification
                 setLoginMessage('Registration successful! Please check your email to verify your account.');
                 toast.success("Registration successful! Please check your email to verify your account.");
@@ -364,7 +364,7 @@ export default function Navbar() {
                 setFormData({ email: '', password: '' }); // Reset form data
                 verifyAuthentication(); // Additional function to verify authentication status
                 setRegistrationSuccess(true);
-            } else if (response.status === 200) {
+            } else if (!isSignUpProcess && response.status === 200) {
                 // Handle login success if this is part of the login process
                 const { key } = response.data;
                 localStorage.setItem('authToken', key);
@@ -411,6 +411,8 @@ export default function Navbar() {
                 // Network error or no response from the server
                 toast.error("Network error or no response from the server.");
             }
+        } finally {
+            setIsLoading(false); // Ensure loading state is reset
         }
     };
 
