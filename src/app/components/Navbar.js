@@ -49,6 +49,7 @@ export default function Navbar() {
     const [isSignUp, setIsSignUp] = useState(false);
     const [registrationSuccess, setRegistrationSuccess] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [showResendButton, setShowResendButton] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -60,6 +61,16 @@ export default function Navbar() {
     }, [isAuthenticated]);
 
      */
+
+    useEffect(() => {
+        if (registrationSuccess) {
+            const timer = setTimeout(() => {
+                setShowResendButton(true);
+            }, 30000); // 30 seconds delay
+
+            return () => clearTimeout(timer); // Cleanup if the component unmounts
+        }
+    }, [registrationSuccess]);
 
     const appleLogin = () => toast.custom((t) => (
         <div
@@ -239,7 +250,19 @@ export default function Navbar() {
 
 
 
-    const toggleForms = () => setIsSignUp(!isSignUp);
+    const toggleForms = () => {
+        setIsSignUp(!isSignUp);
+        setRegistrationSuccess(false);
+        setShowResendButton(false);
+        setFormData({ email: '', password: '' });
+        setFormErrors({
+            email: '',
+            password: '',
+            password1: '',
+            password2: '',
+            nonFieldErrors: '',
+        });
+    };
 
     // Add a state to hold the error messages
     const [formErrors, setFormErrors] = useState({
@@ -364,6 +387,7 @@ export default function Navbar() {
                 setFormData({ email: '', password: '' }); // Reset form data
                 verifyAuthentication(); // Additional function to verify authentication status
                 setRegistrationSuccess(true);
+                setShowResendButton(false);
             } else if (!isSignUpProcess && response.status === 200) {
                 // Handle login success if this is part of the login process
                 const { key } = response.data;
@@ -698,6 +722,16 @@ export default function Navbar() {
                         setShowLoginModal(false);
                         //onOpenChange(false);
                         setIsSignUp(false);
+                        setRegistrationSuccess(false);
+                        setShowResendButton(false);
+                        setFormData({ email: '', password: '' });
+                        setFormErrors({
+                            email: '',
+                            password: '',
+                            password1: '',
+                            password2: '',
+                            nonFieldErrors: '',
+                        });
                     }}
                     placement="top-center"
                     motionProps={{
@@ -727,122 +761,165 @@ export default function Navbar() {
                         </ModalHeader>
                         <Divider/>
                         <ModalBody>
-
-                            <div className="flex flex-col gap-4">
-                                {/* Social Media Login Buttons */}
-                                <Button startContent={<GoogleLogo/>}
+                            {!registrationSuccess ? (
+                                <div className="flex flex-col gap-4">
+                                    {/* Social Media Login Buttons */}
+                                    <Button
+                                        startContent={<GoogleLogo />}
                                         color="secondary"
                                         auto
                                         onPress={handleGoogleLoginClick}
-                                >
-                                    Continue with Google
-                                </Button>
-                                <Button
-                                    startContent={<AppleLogo/>}
-                                    auto
-                                    onPress={appleLogin}
-                                    color="warning"
-                                    className="text-white"
-                                >
-                                    Continue with Apple
-                                </Button>
-                                {/* Email Password Input */}
+                                    >
+                                        Continue with Google
+                                    </Button>
+                                    <Button
+                                        startContent={<AppleLogo />}
+                                        auto
+                                        onPress={appleLogin}
+                                        color="warning"
+                                        className="text-white"
+                                    >
+                                        Continue with Apple
+                                    </Button>
 
-                                <Input
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                    autoFocus
-                                    endContent={
-                                        <MailIcon
-                                            className="text-2xl text-default-400 pointer-events-none flex-shrink-0"/>
-                                    }
-                                    label="Email"
-                                    placeholder="Enter your email"
-                                    variant="bordered"
-                                    error={!!formErrors.email || !!formErrors.username}
-                                />
-                                {formErrors.username && <p className="text-red-500">{formErrors.username}</p>}
-                                {formErrors.email && <p className="text-red-500">{formErrors.email}</p>}
-                                <Input
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                    endContent={<LockIcon
-                                        className="text-2xl text-default-400 pointer-events-none flex-shrink-0"/>}
-                                    label="Password"
-                                    placeholder="Enter your password"
-                                    type="password"
-                                    variant="bordered"
-                                />
-                                {formErrors.password && <p className="text-red-500">{formErrors.password}</p>}
-                                {formErrors.password1 && <p className="text-red-500">{formErrors.password1}</p>}
-                                {formErrors.password2 && <p className="text-red-500">{formErrors.password2}</p>}
+                                    {/* Email and Password Inputs */}
+                                    <Input
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        autoFocus
+                                        endContent={
+                                            <MailIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
+                                        }
+                                        label="Email"
+                                        placeholder="Enter your email"
+                                        variant="bordered"
+                                        error={!!formErrors.email || !!formErrors.username}
+                                    />
+                                    {formErrors.username && <p className="text-red-500">{formErrors.username}</p>}
+                                    {formErrors.email && <p className="text-red-500">{formErrors.email}</p>}
+                                    <Input
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        endContent={
+                                            <LockIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
+                                        }
+                                        label="Password"
+                                        placeholder="Enter your password"
+                                        type="password"
+                                        variant="bordered"
+                                    />
+                                    {formErrors.password && <p className="text-red-500">{formErrors.password}</p>}
+                                    {formErrors.password1 && <p className="text-red-500">{formErrors.password1}</p>}
+                                    {formErrors.password2 && <p className="text-red-500">{formErrors.password2}</p>}
 
-                                {isSignUp ? (
+                                    {isSignUp ? (
                                         <Checkbox defaultSelected size="sm">
-                                            I agree to the <Link href="#" size="sm">Terms of Service</Link> and{" "}
-                                            <Link href="#" size="sm">Privacy Policy</Link>
+                                            I agree to the{' '}
+                                            <Link href="#" size="sm">
+                                                Terms of Service
+                                            </Link>{' '}
+                                            and{' '}
+                                            <Link href="#" size="sm">
+                                                Privacy Policy
+                                            </Link>
                                         </Checkbox>
-                                    )
-                                    :
-                                    (
+                                    ) : (
                                         <div className="flex py-2 px-1 justify-between">
-                                            <Checkbox size="sm">
-                                                Remember me
-                                            </Checkbox>
+                                            <Checkbox size="sm">Remember me</Checkbox>
                                             <Link color="primary" href="#" size="sm" onClick={handlePasswordReset}>
                                                 Forgot password?
                                             </Link>
                                         </div>
                                     )}
-                            </div>
+                                </div>
+                            ) : (
+                                <div className="text-center">
+                                    <p>Registration successful! Please check your email to verify your account.</p>
+                                </div>
+                            )}
                         </ModalBody>
                         <ModalFooter>
-                            <div style={{width: '100%', textAlign: 'center', padding: '20px'}}>
-                                <Button isLoading={isLoading} color="primary" type="submit"
+                            {!registrationSuccess ? (
+                                <div style={{ width: '100%', textAlign: 'center', padding: '20px' }}>
+                                    <Button
+                                        isLoading={isLoading}
+                                        color="primary"
+                                        type="submit"
                                         className="w-full capitalize mb-3 bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg"
                                         spinner={
-                                            <svg className="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                                <path className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"/>
+                                            <svg
+                                                className="animate-spin h-5 w-5 text-current"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    fill="currentColor"
+                                                />
                                             </svg>
                                         }
-                                >
-                                    {isSignUp ? "Sign up" : "Sign in"}
-                                </Button>
-                                {loginMessage && <p>{loginMessage}</p>}
-                                {formErrors.nonFieldErrors && <p className="text-red-500">{formErrors.nonFieldErrors}</p>}
-                                {/* Conditional display of resend verification email button */}
-                                {registrationSuccess && (
-                                    <Button color="success" flat auto onPress={resendVerificationEmail}
-                                            className="mt-4">
-                                        Resend Verification Email
+                                    >
+                                        {isSignUp ? 'Sign up' : 'Sign in'}
                                     </Button>
-                                )}
-                                <p>
-                                    {isSignUp ? (
-                                        <>
-                                            Already a member?{' '}
-                                            <Link color="primary" onPress={toggleForms} style={{cursor: 'pointer'}}>
-                                                Log in here!
-                                            </Link>
-                                        </>
-                                    ) : (
-                                        <>
-                                            Not a member?{' '}
-                                            <Link color="primary" onPress={toggleForms} style={{cursor: 'pointer'}}>
-                                                Sign up now!
-                                            </Link>
-                                        </>
+                                    {loginMessage && <p>{loginMessage}</p>}
+                                    {formErrors.nonFieldErrors && (
+                                        <p className="text-red-500">{formErrors.nonFieldErrors}</p>
                                     )}
-                                </p>
-                            </div>
+
+                                    <p>
+                                        {isSignUp ? (
+                                            <>
+                                                Already a member?{' '}
+                                                <Link color="primary" onPress={toggleForms} style={{ cursor: 'pointer' }}>
+                                                    Log in here!
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <>
+                                                Not a member?{' '}
+                                                <Link color="primary" onPress={toggleForms} style={{ cursor: 'pointer' }}>
+                                                    Sign up now!
+                                                </Link>
+                                            </>
+                                        )}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{ width: '100%', textAlign: 'center', padding: '20px' }}>
+                                    {showResendButton ? (
+                                        <Button
+                                            color="success"
+                                            flat
+                                            auto
+                                            onPress={resendVerificationEmail}
+                                            className="mt-4"
+                                        >
+                                            Resend Verification Email
+                                        </Button>
+                                    ) : (
+                                        <p>
+                                            If you haven't received the email, please wait a moment or check your spam
+                                            folder.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </ModalFooter>
 
                     </ModalContent>
                 </Modal>
 
                 <Toaster />
-
         </nav>
     );
 };
