@@ -912,7 +912,7 @@ export default function Navbar() {
                                         </Button>
                                     ) : (
                                         <p>
-                                            If you haven't received the email, please wait a moment or check your spam
+                                            If you haven&apos;t received the email, please wait a moment or check your spam
                                             folder.
                                         </p>
                                     )}
