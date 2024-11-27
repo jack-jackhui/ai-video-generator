@@ -50,6 +50,7 @@ export default function Navbar() {
     const [registrationSuccess, setRegistrationSuccess] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [showResendButton, setShowResendButton] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -262,6 +263,7 @@ export default function Navbar() {
             password2: '',
             nonFieldErrors: '',
         });
+        setRegisteredEmail('');
     };
 
     // Add a state to hold the error messages
@@ -384,6 +386,7 @@ export default function Navbar() {
                 toast.success("Registration successful! Please check your email to verify your account.");
                 setIsLoading(false); // Stop loading on success
                 //setShowLoginModal(false); // Optionally close the modal or redirect
+                setRegisteredEmail(formData.email);
                 setFormData({ email: '', password: '' }); // Reset form data
                 verifyAuthentication(); // Additional function to verify authentication status
                 setRegistrationSuccess(true);
@@ -442,7 +445,7 @@ export default function Navbar() {
 
     const resendVerificationEmail = async () => {
         try {
-            const response = await authApi.post('/api/dj-rest-auth/registration/resend-email/', { email: formData.email });
+            const response = await authApi.post('/api/dj-rest-auth/registration/resend-email/', { email: registeredEmail });
             if (response.status === 200) {
                 toast.success('Verification email resent. Please check your inbox.');
             }
@@ -732,6 +735,7 @@ export default function Navbar() {
                             password2: '',
                             nonFieldErrors: '',
                         });
+                        setRegisteredEmail('');
                     }}
                     placement="top-center"
                     motionProps={{
