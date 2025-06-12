@@ -39,21 +39,17 @@ export const AuthProvider = ({ children }) => {
 
      */
     const verifyAuthentication = async () => {
-        if (isAuthenticated) {
-            try {
-                // Attempt to fetch a protected route or user info
-                const response = await authApi.get('/api/dj-rest-auth/user/'); // This should be an endpoint that requires authentication
-                if (response.status === 200) {
-                    setIsAuthenticated(true);
-                } else {
-                    throw new Error("Fail to authenticate");
-                }
-            } catch (error) {
-                console.error('Error verifying authentication:', error);
-                setIsAuthenticated(false);
-            }
-        } else {
-            console.log("Not authenticated.");
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            setIsAuthenticated(false);
+            return;
+        }
+        try {
+            authApi.defaults.headers.common['Authorization'] = `Token ${token}`;
+            const response = await authApi.get('/api/dj-rest-auth/user/');
+            setIsAuthenticated(response.status === 200);
+        } catch (error) {
+            setIsAuthenticated(false);
         }
     };
 
@@ -69,28 +65,33 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
 
-    const loginUser = async (credentials) => {
+    const loginUser = async (params) => {
+        // If called with a token (Google/social login)
+        if (params.key) {
+            localStorage.setItem('authToken', params.key);
+            authApi.defaults.headers.common['Authorization'] = `Token ${params.key}`;
+            setIsAuthenticated(true);
+            toast.success("Login successful");
+            router.push('/videoGen');
+            return;
+        }
+        // Classic login
         try {
-            // Perform the login request using the user's credentials
-            const response = await authApi.post('/api/dj-rest-auth/login/', credentials);
-
+            const response = await authApi.post('/api/dj-rest-auth/login/', params);
             if (response.status === 200) {
-                // If login is successful, verify authentication to update UI
                 const { key } = response.data;
-                localStorage.setItem('authToken', key);  // You can use localStorage if you prefer
+                localStorage.setItem('authToken', key);
                 authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
-                setIsAuthenticated(true);  // Directly update state based on login success
+                setIsAuthenticated(true);
                 toast.success("Login successful");
-                router.push('/videoGen'); // Redirect to another route if needed
-                //verifyAuthentication();
+                router.push('/videoGen');
             } else {
-                // If the server responds with an error (not 200 OK), handle it appropriately
                 throw new Error("Login failed with status: " + response.status);
             }
         } catch (error) {
             console.error('Login error:', error);
             toast.error("Login failed. Please check your credentials.");
-            setIsAuthenticated(true);  // Directly update state based on login success
+            setIsAuthenticated(false);
         }
     };
 

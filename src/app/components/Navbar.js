@@ -137,8 +137,10 @@ export default function Navbar() {
             //console.log(response.access_token);
             //return
             try {
-                const { backendResponse } = await authApi.post('/api/dj-rest-auth/google/', { access_token: response.access_token });
-                loginUser(backendResponse.data.token);
+                const backendResponse = await authApi.post('/api/dj-rest-auth/google/', { access_token: response.access_token });
+                console.log(backendResponse.data)
+                const { key } = backendResponse.data;
+                await loginUser({ key });
                 /*
                 if (!backendResponse.ok) {
                     throw new Error('Failed to authenticate with the backend');
@@ -149,13 +151,13 @@ export default function Navbar() {
                 //const data = await backendResponse.json();
                 //localStorage.setItem('authToken', data.token); // Store the token or sessionToken as per your backend response
                 //console.log(setIsAuthenticated);
-                setIsAuthenticated(true);
+                // setIsAuthenticated(true);
                 //setShowLoginModal(true);
                 //setIsLoggedIn(true);
                 setLoginMessage('Login successful');
                 setShowLoginModal(false);
-                toast.success("Login successful");
-                router.push('/videoGen');
+                // toast.success("Login successful");
+                // router.push('/videoGen');
                 //onOpenChange(false);
                 window.dispatchEvent(new Event('login'));
 
@@ -351,6 +353,7 @@ export default function Navbar() {
 
     */
 
+    /*
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true); // Start loading when the request starts
@@ -440,6 +443,79 @@ export default function Navbar() {
             }
         } finally {
             setIsLoading(false); // Ensure loading state is reset
+        }
+    };
+    */
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        setFormErrors({
+            email: '',
+            password: '',
+            password1: '',
+            password2: '',
+            nonFieldErrors: '',
+        });
+
+        if (isSignUp) {
+            // Registration
+            try {
+                const response = await authApi.post('/api/dj-rest-auth/registration/', {
+                    username: formData.email,
+                    email: formData.email,
+                    password1: formData.password,
+                    password2: formData.password,
+                });
+                if ([200, 201, 204].includes(response.status)) {
+                    setLoginMessage('Registration successful! Please check your email to verify your account.');
+                    toast.success("Registration successful! Please check your email to verify your account.");
+                    setRegisteredEmail(formData.email);
+                    setFormData({ email: '', password: '' });
+                    setRegistrationSuccess(true);
+                    setShowResendButton(false);
+                }
+            } catch (error) {
+                if (error.response) {
+                    const errorData = error.response.data;
+                    let errors = {
+                        email: '',
+                        username: '',
+                        password: '',
+                        password1: '',
+                        password2: '',
+                        nonFieldErrors: '',
+                    };
+                    if (errorData.non_field_errors) {
+                        errors.nonFieldErrors = errorData.non_field_errors.join(' ');
+                    }
+                    for (const [key, value] of Object.entries(errorData)) {
+                        if (errors.hasOwnProperty(key)) {
+                            errors[key] = Array.isArray(value) ? value.join(' ') : value;
+                        }
+                    }
+                    setFormErrors(errors);
+                    toast.error("Please correct the errors and try again.");
+                } else {
+                    toast.error("Network error or no response from the server.");
+                }
+            } finally {
+                setIsLoading(false);
+            }
+            return;
+        }
+
+        // Classic login
+        try {
+            await loginUser({ username: formData.email, password: formData.password });
+            setShowLoginModal(false);
+            setLoginMessage('Login successful');
+            window.dispatchEvent(new Event('login'));
+        } catch (error) {
+            // loginUser already handles error/toast
+        } finally {
+            setIsLoading(false);
         }
     };
 
