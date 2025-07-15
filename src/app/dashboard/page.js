@@ -14,22 +14,47 @@ export default function Dashboard() {
     // Initialize taskId state
     const searchParams = useSearchParams();
     const taskId = searchParams.get('taskId');
-    //const [taskId, setTaskId] = useState(null);
-
-    // Using useEffect to wait for taskId to be available
-    /*
+    // Add state for video URLs
+    const [videoUrls, setVideoUrls] = useState([]);
+    const [loading, setLoading] = useState(false);
+    // Fetch task info when taskId is present
     useEffect(() => {
-        if (!router.isReady) return;
-
-        // Now router.query is available and you can safely destructure taskId from it
-        const { taskId } = router.query;
-        setTaskId(taskId); // Set taskId state
-    }, [router.isReady, router.query]);
-
-     */
-
-    // Correctly construct the downloadUrl using the taskId state
-    const downloadUrl = taskId ? `${apiUrl}/tasks/${taskId}/final-1.mp4` : "";
+        if (!taskId) return;
+        setLoading(true);
+        const token = localStorage.getItem('authToken');
+        fetch(`${apiUrl}/api/v1/tasks/${taskId}`, {
+            headers: {
+                'Authorization': `Token ${token}`
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Backend response:", data);
+                // Check if valid data
+                if (data && data.data) {
+                    // Prefer original_videos, fall back to videos.
+                    let videoList = [];
+                    if (Array.isArray(data.data.original_videos) && data.data.original_videos.length > 0) {
+                        videoList = data.data.original_videos;
+                    } else if (Array.isArray(data.data.videos)) {
+                        videoList = data.data.videos;
+                    }
+                    setVideoUrls(videoList.map(
+                        p => p.startsWith('http') ? p : `${apiUrl}/api/v1/download/${p.replace(/^\/+/, '')}`
+                    ));
+                } else {
+                    setVideoUrls([]);
+                }
+                setLoading(false);
+            })
+            .catch(err => {
+                setLoading(false);
+                setVideoUrls([]);
+                // Handle error as needed
+            });
+    }, [taskId, apiUrl]);
+    // Use the first video as default
+    const downloadUrl = videoUrls.length > 0 ? videoUrls[0] : "";
 
     return (
         <DashboardLayout>
@@ -45,18 +70,19 @@ export default function Dashboard() {
                     </CardHeader>
                     <Suspense>
                     <CardBody>
-                        {taskId && (
+                        {loading && <p>Loading video...</p>}
+                        {!loading && downloadUrl && (
                             <video controls className="w-full">
                                 <source src={downloadUrl} type="video/mp4" />
                                 Your browser does not support the video tag.
                             </video>
                         )}
-                        {!taskId &&
+                        {!taskId && !downloadUrl &&
                             <Image
-                            removeWrapper
-                            alt="Relaxing app background"
-                            className="z-0 w-full h-full object-cover"
-                            src="/images/hero3.webp"
+                                removeWrapper
+                                alt="Relaxing app background"
+                                className="z-0 w-full h-full object-cover"
+                                src="/images/hero3.webp"
                             />
                         }
 
@@ -75,7 +101,7 @@ export default function Dashboard() {
                                 <p className="text-tiny text-white/60"></p>
                             </div>
                         </div>
-                        {taskId && (
+                        {downloadUrl && (
                         <Button color="danger" variant="bordered" showAnchorIcon as={Link} radius="full" size="sm" href={downloadUrl} target="_blank">Download</Button>
                             )}
                     </CardFooter>

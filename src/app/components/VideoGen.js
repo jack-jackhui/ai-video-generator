@@ -17,6 +17,7 @@ const VideoGeneratorPage = () => {
     //const apiKey = process.env.NEXT_PUBLIC_VIDEO_API_KEY;
     // console.log(apiUrl);
     // State hooks for the video generator parameters
+    const [backendOption, setBackendOption] = useState('default'); // 'default' or 'sora'
     const { isAuthenticated, setShowLoginModal } = useAuth();
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const router = useRouter();
@@ -150,22 +151,24 @@ const VideoGeneratorPage = () => {
 
         // Check if the video subject and audio are selected
         if (!videoSubject.trim()) {
-            toast.error("Please enter a video subject.")
+            toast.error("Please enter a video subject/description.")
             //alert("Please enter a video subject.");
             return;
         }
 
-        if (!audio.value) {
-            toast.error("Please select an audio option.")
-            //alert("Please select an audio option.");
+        // Skip audio check for Sora mode
+        if (backendOption === "default" && !audio.value) {
+            toast.error("Please select an audio option.");
             return;
         }
 
-        // Ensure videoTerms is handled correctly whether it's an array or a string
-        if (Array.isArray(videoTerms) && videoTerms.length === 0) {
-            await generateVideoKeywords();
-        } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
-            await generateVideoKeywords();
+        // Only generate keywords for Stock mode
+        if (backendOption === "default") {
+            if (Array.isArray(videoTerms) && videoTerms.length === 0) {
+                await generateVideoKeywords();
+            } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
+                await generateVideoKeywords();
+            }
         }
 
         if (!isAuthenticated) {
@@ -178,10 +181,10 @@ const VideoGeneratorPage = () => {
 
         const videoData = {
             video_subject: videoSubject,
-            video_script: videoScript, // Assuming you will capture this from state similar to videoSubject
+            video_script: videoScript, // Assuming will capture this from state similar to videoSubject
             video_terms: videoTerms, // Update as necessary
             video_aspect: aspectRatio.value,
-            video_concat_mode: "random", // Update as necessary
+            video_source: backendOption === "sora" ? "sora" : "default",
             video_clip_duration: 5, // Update as necessary
             video_count: 1, // Update as necessary
             video_language: "", // Update as necessary
@@ -225,8 +228,9 @@ const VideoGeneratorPage = () => {
             });
 
              */
-            const response = await videoApi.post('/api/v1/videos', videoData);
-            const result = await response.data;
+            const endpoint = '/api/v1/videos';
+            const response = await videoApi.post(endpoint, videoData);
+            const result = response.data;
             if (response.status === 200) {
                 setTaskId(result.data.task_id);
                 // Don't set isSubmitting to false here because we're now waiting for the task to complete
@@ -464,91 +468,174 @@ const VideoGeneratorPage = () => {
 
             <div className="absolute z-10 w-full h-full p-4 md:p-8 bg-black/50"></div>
             <div className="z-10">
-            <Card className="mx-auto max-w-4xl bg-gray-800/60 shadow-lg transform -translate-y-20">
+            <Card className="mx-auto min-w-full md:min-w-[800px] max-w-4xl bg-gray-800/60 shadow-lg transform -translate-y-20">
                 <CardBody>
 
-                        <div className="flex flex-col items-center gap-4">
-                <h3 className="text-center text-2xl md:text-3xl font-bold">
-                    AI Video Generator
-                </h3>
-
-                        <Textarea
-                            isRequired
-                            key="videoSubject"
-                            variant="underlined"
-                            label="Video Subject"
-                            isInvalid={isInvalid.videoSubject}
-                            errorMessage={errors.videoSubject}
-                            labelPlacement="inside"
-                            placeholder="Enter your video subject - max 150 words."
-                            value={videoSubject}
-                            onChange={(e) => handleChange('videoSubject', e.target.value)}
-                            maxLength={150}
-                            maxRows={1}// Adjust the max length as needed
-                        />
-
-                        <div className="flex w-full justify-start">
-                        <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onPress={generateVideoScript} isLoading={isScriptGenerating}>
-                            Generate Video Script (optional)
-                        </Button>
-                        </div>
-
-                        <Textarea
-                            key="videoScript"
-                            variant="bordered"
-                            label="Video Script"
-                            isInvalid={isInvalid.videoScript}
-                            errorMessage={errors.videoScript}
-                            labelPlacement="inside"
-                            placeholder="Use AI to generate your video script and customise it - max 2000 words. This is optional."
-                            value={videoScript}
-                            onChange={(e) => handleChange('videoScript', e.target.value)}
-                            maxLength={2000} // Adjust the max length as needed
-                        />
-                        <div className="flex w-full justify-start">
-                            <Button variant="bordered" className="bg-transparent shadow-lg font-bold" onClick={generateVideoKeywords}>
-                                Generate Video Keywords (optional)
-                            </Button>
-                        </div>
-
-                        <Textarea
-                            key="videoKeywords"
-                            variant="bordered"
-                            label="Video Keywords"
-                            isInvalid={isInvalid.videoKeywords}
-                            errorMessage={errors.videoKeywords}
-                            labelPlacement="inside"
-                            placeholder="Generate video keywords. Optional."
-                            value={videoTerms}
-                            onChange={(e) => handleChange('videoKeywords', e.target.value)}
-                            maxLength={100}
-                            maxRows={1}// Adjust the max length as needed
-                        />
-
-
-                        <div className="flex w-full flex-wrap justify-between gap-4 px-8">
-                            {/* Update button text to display the label of the selected item */}
-                            {createDropdown('Aspect Ratio', aspectRatio, handleAspectRatioChange, [{'Landscape 16:9':'16:9'}, {'Portrait 9:16':'9:16'}])}
-                            {createDropdown('Audio', audio, handleAudioChange, voicesData.map(voice => ({[`${voice.name}-${voice.gender}`]: voice.name})))}
-                            {createDropdown('Subtitle Font', subtitleFont, handleSubtitleFontChange, [{'STHeitiLight.ttc':'STHeitiLight.ttc'}, {'STHeitiMedium.ttc':'STHeitiMedium.ttc'}])}
-                            <Checkbox
-                                isSelected={soundEffects}
-                                onChange={(e) => setSoundEffects(e.target.checked)}
-                                color="primary"
-                                size="md"
+                    <div className="flex flex-col items-center gap-4 w-full">
+                        <h3 className="text-center text-2xl md:text-3xl font-bold w-full">
+                            AI Video Generator
+                        </h3>
+                        {/* Backend Selection ALWAYS at top */}
+                        <div className="flex w-full justify-left mb-4">
+                            <RadioGroup
+                                label="Select Video Engine"
+                                orientation="horizontal"
+                                value={backendOption}
+                                onValueChange={setBackendOption}
                             >
-                                <p>Sound Effects</p>
-                            </Checkbox>
+                                <Radio value="default">Stock Video</Radio>
+                                <Radio value="sora">OpenAI Sora</Radio>
+                            </RadioGroup>
                         </div>
-                <Button auto shadow color="warning" onClick={handleSubmit} disabled={isSubmitting || taskCompleted}>
-                    Generate Video
-                </Button>
+                        {/* Sora Mode */}
+                        {backendOption === "sora" && (
+                            <div className="w-full space-y-6"> {/* New container */}
+                                <Textarea
+                                    isRequired
+                                    key="videoSubject"
+                                    variant="bordered"
+                                    label="Video Description"
+                                    isInvalid={isInvalid.videoSubject}
+                                    errorMessage={errors.videoSubject}
+                                    labelPlacement="inside"
+                                    placeholder='Describe your video scene (e.g., "Futuristic drone race at sunset on the planet Mars")'
+                                    value={videoSubject}
+                                    onChange={(e) => handleChange('videoSubject', e.target.value)}
+                                    maxLength={1000}
+                                    maxRows={1}
+                                    className="w-full"  // Ensure full width
+                                />
+
+                                {/* Full-width dropdown container */}
+                                <div className="w-full">
+                                    {createDropdown(
+                                        "Aspect Ratio",
+                                        aspectRatio,
+                                        handleAspectRatioChange,
+                                        [{ "Landscape 16:9": "16:9" }, { "Portrait 9:16": "9:16" }],
+                                        true  // Pass fullWidth prop
+                                    )}
+                                </div>
+
+                                <div className="flex justify-center w-full">
+                                <Button
+                                    auto
+                                    shadow
+                                    color="warning"
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting || taskCompleted}
+                                    className="w-full md:w-auto"  // Better button sizing
+                                >
+                                    Generate Video
+                                </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Stock Video Mode */}
+                        {backendOption === "default" && (
+                            <>
+                                <Textarea
+                                    isRequired
+                                    key="videoSubject"
+                                    variant="underlined"
+                                    label="Video Subject"
+                                    isInvalid={isInvalid.videoSubject}
+                                    errorMessage={errors.videoSubject}
+                                    labelPlacement="inside"
+                                    placeholder="Enter your video subject - max 150 words."
+                                    value={videoSubject}
+                                    onChange={(e) => handleChange('videoSubject', e.target.value)}
+                                    maxLength={150}
+                                    maxRows={1}
+                                />
+                                <div className="flex w-full justify-start">
+                                    <Button
+                                        variant="bordered"
+                                        className="bg-transparent shadow-lg font-bold"
+                                        onPress={generateVideoScript}
+                                        isLoading={isScriptGenerating}
+                                    >
+                                        Generate Video Script (optional)
+                                    </Button>
+                                </div>
+                                <Textarea
+                                    key="videoScript"
+                                    variant="bordered"
+                                    label="Video Script"
+                                    isInvalid={isInvalid.videoScript}
+                                    errorMessage={errors.videoScript}
+                                    labelPlacement="inside"
+                                    placeholder="Use AI to generate your video script and customise it - max 2000 words. This is optional."
+                                    value={videoScript}
+                                    onChange={(e) => handleChange('videoScript', e.target.value)}
+                                    maxLength={2000}
+                                />
+                                <div className="flex w-full justify-start">
+                                    <Button
+                                        variant="bordered"
+                                        className="bg-transparent shadow-lg font-bold"
+                                        onClick={generateVideoKeywords}
+                                    >
+                                        Generate Video Keywords (optional)
+                                    </Button>
+                                </div>
+                                <Textarea
+                                    key="videoKeywords"
+                                    variant="bordered"
+                                    label="Video Keywords"
+                                    isInvalid={isInvalid.videoKeywords}
+                                    errorMessage={errors.videoKeywords}
+                                    labelPlacement="inside"
+                                    placeholder="Generate video keywords. Optional."
+                                    value={videoTerms}
+                                    onChange={(e) => handleChange('videoKeywords', e.target.value)}
+                                    maxLength={100}
+                                    maxRows={1}
+                                />
+                                <div className="flex w-full flex-wrap justify-between gap-4 px-8">
+                                    {createDropdown(
+                                        "Aspect Ratio",
+                                        aspectRatio,
+                                        handleAspectRatioChange,
+                                        [{ "Landscape 16:9": "16:9" }, { "Portrait 9:16": "9:16" }]
+                                    )}
+                                    {createDropdown(
+                                        "Audio",
+                                        audio,
+                                        handleAudioChange,
+                                        voicesData.map(voice => ({ [`${voice.name}-${voice.gender}`]: voice.name }))
+                                    )}
+                                    {createDropdown(
+                                        "Subtitle Font",
+                                        subtitleFont,
+                                        handleSubtitleFontChange,
+                                        [{ 'STHeitiLight.ttc': 'STHeitiLight.ttc' }, { 'STHeitiMedium.ttc': 'STHeitiMedium.ttc' }]
+                                    )}
+                                    <Checkbox
+                                        isSelected={soundEffects}
+                                        onChange={(e) => setSoundEffects(e.target.checked)}
+                                        color="primary"
+                                        size="md"
+                                    >
+                                        <p>Sound Effects</p>
+                                    </Checkbox>
+                                </div>
+                                <Button
+                                    auto
+                                    shadow
+                                    color="warning"
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting || taskCompleted}
+                                >
+                                    Generate Video
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </CardBody>
-                </Card>
-
+            </Card>
             </div>
-
         </div>
 
             <Modal backdrop="blur" isOpen={visible} placement="center" onClose={handleClose}
@@ -620,11 +707,11 @@ const VideoGeneratorPage = () => {
 
 // Helper function to create dropdown components
 
-function createDropdown(label, selectedItem, onChange, options) {
+function createDropdown(label, selectedItem, onChange, options, fullWidth = false) {
     return (
         <Dropdown>
             <DropdownTrigger>
-                <Button variant="bordered" className="bg-transparent border-white">
+                <Button variant="bordered" className={`bg-transparent border-white ${fullWidth ? 'w-full' : ''}`}>
                     {selectedItem.label || `Select ${label}`}
                 </Button>
             </DropdownTrigger>

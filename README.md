@@ -1,4 +1,4 @@
-# AI-Powered Video Generator App
+# AI-Powered Video Generator App Frontend
 
 Transform your scripts into captivating videos in minutes with our AI-powered Video Generator App. This tool is designed to streamline video production, offering high-quality outputs with minimal input and effort.
 
@@ -14,7 +14,7 @@ Transform your scripts into captivating videos in minutes with our AI-powered Vi
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/ai-video-generator-app.git
+   git clone https://github.com/jack-jackhui/ai-video-generator-app.git
 2. **Navigate to the App Directory**
 Change into the project directory:
 
