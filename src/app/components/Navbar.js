@@ -643,7 +643,7 @@ export default function Navbar() {
                                 radius="sm"
                                 variant="light"
                             >
-                                AI FaceSwap
+                                AI Image Generation
                             </Button>
                         </DropdownTrigger>
                         <DropdownMenu
@@ -653,6 +653,13 @@ export default function Navbar() {
                                 base: "gap-1",
                             }}
                         >
+                            <DropdownItem
+                                key="AiImageGen"
+                                startContent={icons.user}
+                                href="/imageGen"
+                            >
+                                AI Image Generation / Editing
+                            </DropdownItem>
                             <DropdownItem
                                 key="VideoFaceSwap"
                                 startContent={icons.user}
@@ -698,7 +705,7 @@ export default function Navbar() {
                         </Button>
                     )}
                 </div>
-                {/* Mobile Menu */}
+
                 {/* Mobile Menu */}
                 <div
                     className={`${
@@ -723,7 +730,7 @@ export default function Navbar() {
                                 radius="sm"
                                 variant="light"
                             >
-                                AI FaceSwap
+                                AI Image Generation
                             </Button>
                         </DropdownTrigger>
                         <DropdownMenu
@@ -733,6 +740,41 @@ export default function Navbar() {
                                 base: "gap-1",
                             }}
                         >
+                            <DropdownItem
+                                key="AIImageGeneration"
+                                startContent={icons.user}
+                                href="/imageGen"
+                            >
+                                AI Image Generation
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+                    <Dropdown>
+                        <DropdownTrigger>
+                            <Button
+                                disableRipple
+                                className="text-lg p-0 bg-transparent data-[hover=true]:bg-transparent"
+                                endContent={icons.chevron}
+                                radius="sm"
+                                variant="light"
+                            >
+                                AI Image Generation
+                            </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                            aria-label="FaceSwap features"
+                            className="w-[340px]"
+                            itemClasses={{
+                                base: "gap-1",
+                            }}
+                        >
+                            <DropdownItem
+                                key="AIImageGeneration"
+                                startContent={icons.user}
+                                href="/imageGen"
+                            >
+                                Video Face Swap
+                            </DropdownItem>
                             <DropdownItem
                                 key="VideoFaceSwap"
                                 startContent={icons.user}
