@@ -655,7 +655,7 @@ export default function Navbar() {
                         >
                             <DropdownItem
                                 key="AiImageGen"
-                                startContent={icons.user}
+                                startContent={icons.flash}
                                 href="/imageGen"
                             >
                                 AI Image Generation / Editing
