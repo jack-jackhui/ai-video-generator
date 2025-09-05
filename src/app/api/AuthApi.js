@@ -7,10 +7,12 @@ const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const authApi = axios.create({
     baseURL: API_URL,
     withCredentials: true,  // Necessary to send cookies over CORS
+    /*
     headers: {
         'Content-Type': 'application/json'
         //'X-CSRFToken': Cookies.get('csrftoken')
     }
+    */
 });
 
 // Configure axios to include the token in all requests
@@ -24,32 +26,39 @@ authApi.interceptors.request.use(config => {
     return Promise.reject(error);
 });
 
-// Dynamically set CSRF token for each request
-authApi.interceptors.request.use((config) => {
-    const csrfToken = Cookies.get('csrftoken');
-    //console.log("csrfToken: " + csrfToken);
-    if (csrfToken) {
-        config.headers['X-CSRFToken'] = csrfToken;
+// Request interceptor: Attach auth + CSRF token
+authApi.interceptors.request.use(async config => {
+    // Add DRF TokenAuthentication if available
+    const token = sessionStorage.getItem('authToken');
+    if (token) {
+        config.headers['Authorization'] = `Token ${token}`;
     }
-    return config;
-}, (error) => Promise.reject(error));
-
-// Use interceptor to handle errors globally
-authApi.interceptors.response.use(response => response, async error => {
-    // Handle unauthorized error (session expired or logged out)
-    if (error.response.status === 401 && !error.config._retry) {
-        error.config._retry = true;
-        try {
-            // You might want to redirect to a login page or show a login modal here
-            console.error('Session expired, please log in again.');
-            // Redirect or handle session expiration logic here
-        } catch (refreshError) {
-            console.error('Session refresh failed:', refreshError);
+    // Always ensure CSRF token is set for unsafe methods
+    const needsCSRF = ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase());
+    if (needsCSRF) {
+        let csrfToken = Cookies.get('csrftoken');
+        if (!csrfToken) {
+            csrfToken = await fetchCSRFToken();
+        }
+        if (csrfToken) {
+            config.headers['X-CSRFToken'] = csrfToken;
         }
     }
-    return Promise.reject(error);
-});
+    return config;
+}, error => Promise.reject(error));
 
+// Response interceptor: Handle global errors
+authApi.interceptors.response.use(
+    response => response,
+    async error => {
+        if (error.response?.status === 401 && !error.config._retry) {
+            error.config._retry = true;
+            console.error('Unauthorized — user is not logged in or session expired.');
+            // Here you could redirect to login or refresh token if using JWT
+        }
+        return Promise.reject(error);
+    }
+);
 /*
 const setRefreshTimer = (token) => {
     const decoded = jwtDecode(token);
