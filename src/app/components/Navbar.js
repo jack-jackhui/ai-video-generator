@@ -22,6 +22,8 @@ import {MailIcon} from './MailIcon.jsx';
 import {LockIcon} from './LockIcon.jsx';
 import {GoogleLogo} from "./Google_logo";
 import {AppleLogo} from "./Apple_logo";
+import { GitHubLogo } from './GitHubLogo';
+import { MicrosoftLogo } from './MicrosoftLogo';
 //import useGoogleApi from '../hook/useGoogleApi';
 //import useGoogleIdentityServices from "../hook/useGoogleIdentityServices";
 import NextLink from 'next/link';
@@ -104,6 +106,78 @@ export default function Navbar() {
             </div>
         </div>
     ))
+
+    const handleMicrosoftLogin = async () => {
+        try {
+            if (!window.msalInstance) {
+                toast.error('Microsoft authentication not loaded yet. Please try again.');
+                return;
+            }
+            
+            const response = await window.msalInstance.loginPopup({
+                scopes: ['openid', 'profile', 'email']
+            });
+            
+            const backendResponse = await authApi.post('/api/dj-rest-auth/microsoft/', {
+                access_token: response.accessToken,
+                id_token: response.idToken
+            });
+            
+            const { key } = backendResponse.data;
+            await loginUser({ key });
+            setShowLoginModal(false);
+            window.dispatchEvent(new Event('login'));
+        } catch (error) {
+            console.error('Microsoft authentication error:', error);
+            toast.error('Microsoft login failed');
+        }
+    };
+
+    const handleGitHubLogin = () => {
+        const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+        const redirectUri = process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URL;
+        const scope = 'user:email';
+        
+        if (!clientId) {
+            toast.error('GitHub OAuth not configured');
+            return;
+        }
+        
+        const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${Date.now()}`;
+        
+        const popup = window.open(authUrl, 'github-login', 'width=500,height=600,scrollbars=yes,resizable=yes');
+        
+        const checkClosed = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(checkClosed);
+                handleGitHubCallback();
+            }
+        }, 1000);
+    };
+
+    const handleGitHubCallback = async () => {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code') || localStorage.getItem('github_auth_code');
+            
+            if (code) {
+                const backendResponse = await authApi.post('/api/dj-rest-auth/github/', {
+                    code: code
+                });
+                
+                const { key } = backendResponse.data;
+                await loginUser({ key });
+                setShowLoginModal(false);
+                window.dispatchEvent(new Event('login'));
+                
+                localStorage.removeItem('github_auth_code');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (error) {
+            console.error('GitHub authentication error:', error);
+            toast.error('GitHub login failed');
+        }
+    };
     // Function to initialize Google SignIn
     const initGoogleSignIn = () => {
         const client = window.google.accounts.oauth2.initTokenClient({
@@ -118,17 +192,37 @@ export default function Navbar() {
     };
 
     useEffect(() => {
-        // Ensure the Google Identity Services script is loaded
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.onload = () => {
+        // Load Google Identity Services SDK
+        const googleScript = document.createElement('script');
+        googleScript.src = 'https://accounts.google.com/gsi/client';
+        googleScript.onload = () => {
             window.googleLoaded = true;
         };
-        document.body.appendChild(script);
+        document.body.appendChild(googleScript);
+
+        // Load Microsoft MSAL library
+        const msalScript = document.createElement('script');
+        msalScript.src = 'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js';
+        msalScript.onload = () => {
+            if (process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID && window.msal) {
+                window.msalInstance = new window.msal.PublicClientApplication({
+                    auth: {
+                        clientId: process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID,
+                        authority: 'https://login.microsoftonline.com/common',
+                        redirectUri: process.env.NEXT_PUBLIC_MICROSOFT_REDIRECT_URL
+                    }
+                });
+            }
+        };
+        document.body.appendChild(msalScript);
 
         // Clean up
         return () => {
-            document.body.removeChild(script);
+            [googleScript, msalScript].forEach(script => {
+                if (document.body.contains(script)) {
+                    document.body.removeChild(script);
+                }
+            });
         };
     }, []);
 
@@ -902,6 +996,24 @@ export default function Navbar() {
                                         className="text-white"
                                     >
                                         Continue with Apple
+                                    </Button>
+                                    <Button
+                                        startContent={<GitHubLogo />}
+                                        color="default"
+                                        auto
+                                        onPress={handleGitHubLogin}
+                                        className="bg-orange-500 text-white hover:bg-orange-600 border border-orange-400"
+                                    >
+                                        Continue with GitHub
+                                    </Button>
+                                    <Button
+                                        startContent={<MicrosoftLogo />}
+                                        color="primary"
+                                        auto
+                                        onPress={handleMicrosoftLogin}
+                                        className="bg-blue-600 text-white hover:bg-blue-700"
+                                    >
+                                        Continue with Microsoft
                                     </Button>
 
                                     {/* Email and Password Inputs */}

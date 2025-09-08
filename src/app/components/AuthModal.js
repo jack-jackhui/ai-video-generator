@@ -19,6 +19,8 @@ import { MailIcon } from './MailIcon.jsx';
 import { LockIcon } from './LockIcon.jsx';
 import { GoogleLogo } from './Google_logo';
 import { AppleLogo } from './Apple_logo';
+import { GitHubLogo } from './GitHubLogo';
+import { MicrosoftLogo } from './MicrosoftLogo';
 import toast from 'react-hot-toast';
 
 export default function AuthModal() {
@@ -51,37 +53,108 @@ export default function AuthModal() {
         }
     }, [registrationSuccess]);
 
-    const appleLogin = () => toast.custom((t) => (
-        <div
-            className={`${
-                t.visible ? 'animate-enter' : 'animate-leave'
-            } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
-        >
-            <div className="flex-1 w-0 p-4">
-                <div className="flex items-start">
-                    <div className="flex-shrink-0 pt-0.5">
-                        <AppleLogo />
-                    </div>
-                    <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                            Coming Soon!
-                        </p>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Apple ID login is coming.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div className="flex border-l border-gray-200">
-                <button
-                    onClick={() => toast.dismiss(t.id)}
-                    className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    Close
-                </button>
-            </div>
-        </div>
-    ));
+    const handleAppleLogin = async () => {
+        try {
+            if (!window.AppleID) {
+                toast.error('Apple Sign-In not loaded yet. Please try again.');
+                return;
+            }
+            
+            const response = await window.AppleID.auth.signIn();
+            const { authorization } = response;
+            
+            const backendResponse = await authApi.post('/api/dj-rest-auth/apple/', {
+                authorization_code: authorization.code,
+                id_token: authorization.id_token
+            });
+            
+            const { key } = backendResponse.data;
+            await loginUser({ key });
+            setShowLoginModal(false);
+            window.dispatchEvent(new Event('login'));
+        } catch (error) {
+            console.error('Apple authentication error:', error);
+            toast.error('Apple login failed');
+        }
+    };
+
+    const handleGitHubLogin = () => {
+        const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+        const redirectUri = process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URL;
+        const scope = 'user:email';
+        
+        if (!clientId) {
+            toast.error('GitHub OAuth not configured');
+            return;
+        }
+        
+        const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${Date.now()}`;
+        
+        // Open popup window for OAuth
+        const popup = window.open(authUrl, 'github-login', 'width=500,height=600,scrollbars=yes,resizable=yes');
+        
+        // Listen for popup completion
+        const checkClosed = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(checkClosed);
+                // Check for auth code in URL params or localStorage
+                handleGitHubCallback();
+            }
+        }, 1000);
+    };
+
+    const handleGitHubCallback = async () => {
+        try {
+            // Get authorization code from URL or stored value
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code') || localStorage.getItem('github_auth_code');
+            
+            if (code) {
+                const backendResponse = await authApi.post('/api/dj-rest-auth/github/', {
+                    code: code
+                });
+                
+                const { key } = backendResponse.data;
+                await loginUser({ key });
+                setShowLoginModal(false);
+                window.dispatchEvent(new Event('login'));
+                
+                // Clean up
+                localStorage.removeItem('github_auth_code');
+                // Clear URL params
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (error) {
+            console.error('GitHub authentication error:', error);
+            toast.error('GitHub login failed');
+        }
+    };
+
+    const handleMicrosoftLogin = async () => {
+        try {
+            if (!window.msalInstance) {
+                toast.error('Microsoft authentication not loaded yet. Please try again.');
+                return;
+            }
+            
+            const response = await window.msalInstance.loginPopup({
+                scopes: ['openid', 'profile', 'email']
+            });
+            
+            const backendResponse = await authApi.post('/api/dj-rest-auth/microsoft/', {
+                access_token: response.accessToken,
+                id_token: response.idToken
+            });
+            
+            const { key } = backendResponse.data;
+            await loginUser({ key });
+            setShowLoginModal(false);
+            window.dispatchEvent(new Event('login'));
+        } catch (error) {
+            console.error('Microsoft authentication error:', error);
+            toast.error('Microsoft login failed');
+        }
+    };
 
     const initGoogleSignIn = () => {
         const client = window.google.accounts.oauth2.initTokenClient({
@@ -94,15 +167,52 @@ export default function AuthModal() {
     };
 
     useEffect(() => {
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.onload = () => {
+        // Load Google Sign-In SDK
+        const googleScript = document.createElement('script');
+        googleScript.src = 'https://accounts.google.com/gsi/client';
+        googleScript.onload = () => {
             window.googleLoaded = true;
         };
-        document.body.appendChild(script);
+        document.body.appendChild(googleScript);
+
+        // Load Apple Sign-In SDK
+        const appleScript = document.createElement('script');
+        appleScript.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+        appleScript.onload = () => {
+            if (process.env.NEXT_PUBLIC_APPLE_CLIENT_ID) {
+                window.AppleID.auth.init({
+                    clientId: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID,
+                    scope: 'email name',
+                    redirectURI: process.env.NEXT_PUBLIC_APPLE_REDIRECT_URL,
+                    usePopup: true
+                });
+            }
+        };
+        document.body.appendChild(appleScript);
+
+        // Load Microsoft MSAL library
+        const msalScript = document.createElement('script');
+        msalScript.src = 'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js';
+        msalScript.onload = () => {
+            if (process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID && window.msal) {
+                window.msalInstance = new window.msal.PublicClientApplication({
+                    auth: {
+                        clientId: process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID,
+                        authority: 'https://login.microsoftonline.com/common',
+                        redirectUri: process.env.NEXT_PUBLIC_MICROSOFT_REDIRECT_URL
+                    }
+                });
+            }
+        };
+        document.body.appendChild(msalScript);
 
         return () => {
-            document.body.removeChild(script);
+            // Cleanup scripts on unmount
+            [googleScript, appleScript, msalScript].forEach(script => {
+                if (document.body.contains(script)) {
+                    document.body.removeChild(script);
+                }
+            });
         };
     }, []);
 
@@ -304,11 +414,29 @@ export default function AuthModal() {
                             <Button
                                 startContent={<AppleLogo />}
                                 auto
-                                onPress={appleLogin}
+                                onPress={handleAppleLogin}
                                 color="warning"
                                 className="text-white"
                             >
                                 Continue with Apple
+                            </Button>
+                            <Button
+                                startContent={<GitHubLogo />}
+                                color="default"
+                                auto
+                                onPress={handleGitHubLogin}
+                                className="bg-gray-900 text-white hover:bg-gray-800"
+                            >
+                                Continue with GitHub
+                            </Button>
+                            <Button
+                                startContent={<MicrosoftLogo />}
+                                color="primary"
+                                auto
+                                onPress={handleMicrosoftLogin}
+                                className="bg-blue-600 text-white hover:bg-blue-700"
+                            >
+                                Continue with Microsoft
                             </Button>
 
                             <Input
