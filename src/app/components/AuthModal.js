@@ -79,9 +79,13 @@ export default function AuthModal() {
     };
 
     const handleGitHubLogin = () => {
+        console.log('GitHub login button clicked');
+        
         const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
         const redirectUri = process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URL;
         const scope = 'user:email';
+        
+        console.log('GitHub config:', { clientId, redirectUri });
         
         if (!clientId) {
             toast.error('GitHub OAuth not configured');
@@ -89,40 +93,74 @@ export default function AuthModal() {
         }
         
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${Date.now()}`;
+        console.log('Opening popup with URL:', authUrl);
         
         // Open popup window for OAuth
         const popup = window.open(authUrl, 'github-login', 'width=500,height=600,scrollbars=yes,resizable=yes');
+        console.log('Popup opened:', popup);
         
-        // Listen for popup completion
+        // Listen for messages from popup window
+        const handleMessage = (event) => {
+            console.log('Message received from origin:', event.origin);
+            console.log('Current window origin:', window.location.origin);
+            console.log('Message data:', event.data);
+            
+            // More permissive origin check for debugging
+            if (event.origin !== window.location.origin && event.origin !== 'http://localhost:3000') {
+                console.log('Origin mismatch, ignoring message');
+                return;
+            }
+            
+            console.log('Received message from popup:', event.data);
+            
+            if (event.data && event.data.type === 'GITHUB_AUTH_SUCCESS') {
+                const { code } = event.data;
+                console.log('GitHub auth code received:', code);
+                handleGitHubCallback(code);
+                // Close popup after successful authentication
+                if (popup && !popup.closed) {
+                    popup.close();
+                }
+                window.removeEventListener('message', handleMessage);
+            } else if (event.data && event.data.type === 'GITHUB_AUTH_ERROR') {
+                console.log('GitHub auth error:', event.data.error);
+                toast.error('GitHub login failed');
+                if (popup && !popup.closed) {
+                    popup.close();
+                }
+                window.removeEventListener('message', handleMessage);
+            }
+        };
+        
+        console.log('Adding message event listener');
+        window.addEventListener('message', handleMessage);
+        
+        // Fallback: check if popup closed manually
         const checkClosed = setInterval(() => {
             if (popup.closed) {
                 clearInterval(checkClosed);
-                // Check for auth code in URL params or localStorage
-                handleGitHubCallback();
+                console.log('Popup closed, removing message listener');
+                window.removeEventListener('message', handleMessage);
             }
         }, 1000);
     };
 
-    const handleGitHubCallback = async () => {
+    const handleGitHubCallback = async (authCode) => {
         try {
-            // Get authorization code from URL or stored value
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code') || localStorage.getItem('github_auth_code');
+            console.log('Processing GitHub callback with code:', authCode);
             
-            if (code) {
+            if (authCode) {
                 const backendResponse = await authApi.post('/api/dj-rest-auth/github/', {
-                    code: code
+                    code: authCode
                 });
+                
+                console.log('Backend response:', backendResponse.data);
                 
                 const { key } = backendResponse.data;
                 await loginUser({ key });
                 setShowLoginModal(false);
                 window.dispatchEvent(new Event('login'));
-                
-                // Clean up
-                localStorage.removeItem('github_auth_code');
-                // Clear URL params
-                window.history.replaceState({}, document.title, window.location.pathname);
+                toast.success('GitHub login successful!');
             }
         } catch (error) {
             console.error('GitHub authentication error:', error);
@@ -130,26 +168,57 @@ export default function AuthModal() {
         }
     };
 
+    // handleMicrosoftCallback removed - now using MSAL popup flow
+
     const handleMicrosoftLogin = async () => {
+        const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID;
+        
+        if (!clientId) {
+            toast.error('Microsoft OAuth not configured');
+            return;
+        }
+
         try {
+            // Initialize MSAL instance if not already done
             if (!window.msalInstance) {
-                toast.error('Microsoft authentication not loaded yet. Please try again.');
-                return;
+                const { PublicClientApplication } = await import('@azure/msal-browser');
+                
+                const msalConfig = {
+                    auth: {
+                        clientId: clientId,
+                        authority: 'https://login.microsoftonline.com/common'
+                        // No redirectUri needed for popup flow
+                    },
+                    cache: {
+                        cacheLocation: 'sessionStorage',
+                        storeAuthStateInCookie: false
+                    }
+                };
+                
+                window.msalInstance = new PublicClientApplication(msalConfig);
+                await window.msalInstance.initialize();
             }
+
+            // Request configuration
+            const loginRequest = {
+                scopes: ['openid', 'profile', 'email', 'User.Read'],
+                prompt: 'select_account'
+            };
+
+            // Perform popup login
+            const response = await window.msalInstance.loginPopup(loginRequest);
             
-            const response = await window.msalInstance.loginPopup({
-                scopes: ['openid', 'profile', 'email']
-            });
-            
-            const backendResponse = await authApi.post('/api/dj-rest-auth/microsoft/', {
-                access_token: response.accessToken,
-                id_token: response.idToken
-            });
-            
-            const { key } = backendResponse.data;
-            await loginUser({ key });
-            setShowLoginModal(false);
-            window.dispatchEvent(new Event('login'));
+            if (response.idToken) {
+                // Send ID token to backend (same as Google flow)
+                const backendResponse = await authApi.post('/api/dj-rest-auth/microsoft/', {
+                    access_token: response.idToken
+                });
+                
+                const { key } = backendResponse.data;
+                await loginUser({ key });
+                setShowLoginModal(false);
+                window.dispatchEvent(new Event('login'));
+            }
         } catch (error) {
             console.error('Microsoft authentication error:', error);
             toast.error('Microsoft login failed');
@@ -190,25 +259,11 @@ export default function AuthModal() {
         };
         document.body.appendChild(appleScript);
 
-        // Load Microsoft MSAL library
-        const msalScript = document.createElement('script');
-        msalScript.src = 'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js';
-        msalScript.onload = () => {
-            if (process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID && window.msal) {
-                window.msalInstance = new window.msal.PublicClientApplication({
-                    auth: {
-                        clientId: process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID,
-                        authority: 'https://login.microsoftonline.com/common',
-                        redirectUri: process.env.NEXT_PUBLIC_MICROSOFT_REDIRECT_URL
-                    }
-                });
-            }
-        };
-        document.body.appendChild(msalScript);
+        // Microsoft OAuth uses server-side flow, no client library needed
 
         return () => {
             // Cleanup scripts on unmount
-            [googleScript, appleScript, msalScript].forEach(script => {
+            [googleScript, appleScript].forEach(script => {
                 if (document.body.contains(script)) {
                     document.body.removeChild(script);
                 }
