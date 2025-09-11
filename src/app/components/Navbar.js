@@ -109,7 +109,7 @@ export default function Navbar() {
 
     const handleMicrosoftLogin = async () => {
         const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID;
-        
+
         if (!clientId) {
             toast.error('Microsoft OAuth not configured');
             return;
@@ -119,15 +119,15 @@ export default function Navbar() {
             // Initialize MSAL instance if not already done
             if (!window.msalInstance) {
                 const { PublicClientApplication } = await import('@azure/msal-browser');
-                
+
                 const msalConfig = {
                     auth: {
                         clientId: clientId,
                         authority: 'https://login.microsoftonline.com/common',
-                        redirectUri: window.location.origin
+                        redirectUri: process.env.NEXT_PUBLIC_MICROSOFT_REDIRECT_URL || window.location.origin
                     }
                 };
-                
+
                 window.msalInstance = new PublicClientApplication(msalConfig);
                 await window.msalInstance.initialize();
             }
@@ -140,13 +140,13 @@ export default function Navbar() {
 
             // Perform popup login
             const response = await window.msalInstance.loginPopup(loginRequest);
-            
+
             if (response.accessToken) {
                 // Send access token to backend (same as Google flow)
                 const backendResponse = await authApi.post('/api/dj-rest-auth/microsoft/', {
                     access_token: response.accessToken
                 });
-                
+
                 const { key } = backendResponse.data;
                 await loginUser({ key });
                 setShowLoginModal(false);
@@ -160,38 +160,38 @@ export default function Navbar() {
 
     const handleGitHubLogin = () => {
         console.log('GitHub login button clicked in Navbar');
-        
+
         const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
         const redirectUri = process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URL;
         const scope = 'user:email';
-        
+
         console.log('GitHub config:', { clientId, redirectUri });
-        
+
         if (!clientId) {
             toast.error('GitHub OAuth not configured');
             return;
         }
-        
+
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${Date.now()}`;
         console.log('Opening popup with URL:', authUrl);
-        
+
         const popup = window.open(authUrl, 'github-login', 'width=500,height=600,scrollbars=yes,resizable=yes');
         console.log('Popup opened:', popup);
-        
+
         // Listen for messages from popup window
         const handleMessage = (event) => {
             console.log('Message received from origin:', event.origin);
             console.log('Current window origin:', window.location.origin);
             console.log('Message data:', event.data);
-            
+
             // More permissive origin check for debugging
             if (event.origin !== window.location.origin && event.origin !== 'http://localhost:3000') {
                 console.log('Origin mismatch, ignoring message');
                 return;
             }
-            
+
             console.log('Received message from popup:', event.data);
-            
+
             if (event.data && event.data.type === 'GITHUB_AUTH_SUCCESS') {
                 const { code } = event.data;
                 console.log('GitHub auth code received:', code);
@@ -210,10 +210,10 @@ export default function Navbar() {
                 window.removeEventListener('message', handleMessage);
             }
         };
-        
+
         console.log('Adding message event listener');
         window.addEventListener('message', handleMessage);
-        
+
         // Fallback: check if popup closed manually
         const checkClosed = setInterval(() => {
             if (popup.closed) {
@@ -227,19 +227,19 @@ export default function Navbar() {
     const handleGitHubCallback = async (code) => {
         try {
             console.log('Processing GitHub auth with code:', code);
-            
+
             if (code) {
                 const backendResponse = await authApi.post('/api/dj-rest-auth/github/', {
                     code: code
                 });
-                
+
                 console.log('Backend response:', backendResponse.data);
                 const { key } = backendResponse.data;
                 await loginUser({ key });
                 setShowLoginModal(false);
                 window.dispatchEvent(new Event('login'));
                 toast.success('GitHub login successful!');
-                
+
                 // Clean up any stored auth codes
                 localStorage.removeItem('github_auth_code');
             } else {
