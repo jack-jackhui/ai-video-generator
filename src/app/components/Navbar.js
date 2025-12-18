@@ -663,7 +663,7 @@ export default function Navbar() {
 
         // Classic login
         try {
-            await loginUser({ username: formData.email, password: formData.password });
+            await loginUser({ email: formData.email, password: formData.password });
             setShowLoginModal(false);
             setLoginMessage('Login successful');
             window.dispatchEvent(new Event('login'));

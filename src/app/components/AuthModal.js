@@ -359,7 +359,7 @@ export default function AuthModal() {
         }
 
         try {
-            await loginUser({ username: formData.email, password: formData.password });
+            await loginUser({ email: formData.email, password: formData.password });
             setShowLoginModal(false);
             window.dispatchEvent(new Event('login'));
         } catch (error) {
