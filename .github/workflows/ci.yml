@@ -25,13 +25,13 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint || true
-
-      - name: Type check
-        run: npx tsc --noEmit || true
+        run: npm run lint
+        continue-on-error: false
 
       - name: Build
         run: npm run build
         env:
-          # Skip telemetry and reduce memory usage
           NEXT_TELEMETRY_DISABLED: 1
+          # Provide dummy env vars for build
+          NEXT_PUBLIC_BACKEND_URL: https://example.com
+          NEXT_PUBLIC_VIDEO_GEN_API_URL: https://example.com

@@ -2,7 +2,7 @@
 "use client";
 import React, {Suspense, useEffect, useState} from 'react';
 import { useAuth } from "../context/AuthContext";
-import PhotoFaceSwapLayout from './photoFaceSwapLayouts';
+import PhotoFaceSwapLayout from './PhotoFaceSwapLayout';
 
 import {Button, Card, CardBody, CardFooter, CardHeader,
     Image, Link, Input,

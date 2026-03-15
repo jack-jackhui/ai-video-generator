@@ -4,7 +4,7 @@ import React from "react";
 import { authApi } from '../api/AuthApi';
 import { useRouter } from 'next/navigation';
 import { useAuth } from "../context/AuthContext";
-import {useState, useEffect, useRef, useCallback} from "react";
+import { useState, useEffect } from "react";
 import {
     Divider,
     Modal,
@@ -18,34 +18,28 @@ import {
     Input,
     Link, Image, DropdownItem, DropdownTrigger, Dropdown, DropdownMenu
 } from "@nextui-org/react";
-import {MailIcon} from './MailIcon.jsx';
-import {LockIcon} from './LockIcon.jsx';
-import {GoogleLogo} from "./Google_logo";
-import {AppleLogo} from "./Apple_logo";
+import { MailIcon } from './MailIcon.jsx';
+import { LockIcon } from './LockIcon.jsx';
+import { GoogleLogo } from "./Google_logo";
+import { AppleLogo } from "./Apple_logo";
 import { GitHubLogo } from './GitHubLogo';
 import { MicrosoftLogo } from './MicrosoftLogo';
-//import useGoogleApi from '../hook/useGoogleApi';
-//import useGoogleIdentityServices from "../hook/useGoogleIdentityServices";
 import NextLink from 'next/link';
-import {ChevronDown, Lock, Activity, Flash, Server, TagUser, Scale} from "./Icons.jsx";
+import { ChevronDown, Lock, Activity, Flash, Server, TagUser, Scale } from "./Icons.jsx";
 import toast, { Toaster } from 'react-hot-toast';
+import { tokenStorage } from '../../lib/auth/tokenStorage';
+import { logger } from '../../lib/logger';
+
 export default function Navbar() {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL;
     const mynotebooklmUrl = process.env.NEXT_PUBLIC_MYNOTEBOOKLM_URL;
-    //console.log(backendUrl);
-    //useGoogleIdentityServices()
-    //useGoogleApi();
-    const { isAuthenticated, setIsAuthenticated, loginUser, logoutUser, showLoginModal, setShowLoginModal, verifyAuthentication } = useAuth();
+    
+    const { isAuthenticated, loginUser, logoutUser, showLoginModal, setShowLoginModal, verifyAuthentication } = useAuth();
     const router = useRouter();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    //const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const [loginMessage, setLoginMessage] = useState('');
-    //const signInDivRef = useRef(null);
-    //const [backdrop, setBackdrop] = React.useState('opaque')
-
     const backdrop = "blur";
 
     const [isSignUp, setIsSignUp] = useState(false);
@@ -58,28 +52,18 @@ export default function Navbar() {
         password: '',
     });
 
-    /*
-    useEffect(() => {
-        console.log('Authentication status:', isAuthenticated);
-    }, [isAuthenticated]);
-
-     */
-
     useEffect(() => {
         if (registrationSuccess) {
             const timer = setTimeout(() => {
                 setShowResendButton(true);
-            }, 30000); // 30 seconds delay
-
-            return () => clearTimeout(timer); // Cleanup if the component unmounts
+            }, 30000);
+            return () => clearTimeout(timer);
         }
     }, [registrationSuccess]);
 
     const appleLogin = () => toast.custom((t) => (
         <div
-            className={`${
-                t.visible ? 'animate-enter' : 'animate-leave'
-            } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+            className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
         >
             <div className="flex-1 w-0 p-4">
                 <div className="flex items-start">
@@ -87,12 +71,8 @@ export default function Navbar() {
                         <AppleLogo />
                     </div>
                     <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                            Coming Soon!
-                        </p>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Apple ID login is coming.
-                        </p>
+                        <p className="text-sm font-medium text-gray-900">Coming Soon!</p>
+                        <p className="mt-1 text-sm text-gray-500">Apple ID login is coming.</p>
                     </div>
                 </div>
             </div>
@@ -105,21 +85,18 @@ export default function Navbar() {
                 </button>
             </div>
         </div>
-    ))
+    ));
 
     const handleMicrosoftLogin = async () => {
         const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID;
-
         if (!clientId) {
             toast.error('Microsoft OAuth not configured');
             return;
         }
 
         try {
-            // Initialize MSAL instance if not already done
             if (!window.msalInstance) {
                 const { PublicClientApplication } = await import('@azure/msal-browser');
-
                 const msalConfig = {
                     auth: {
                         clientId: clientId,
@@ -127,45 +104,37 @@ export default function Navbar() {
                         redirectUri: process.env.NEXT_PUBLIC_MICROSOFT_REDIRECT_URL || window.location.origin
                     }
                 };
-
                 window.msalInstance = new PublicClientApplication(msalConfig);
                 await window.msalInstance.initialize();
             }
 
-            // Request configuration
             const loginRequest = {
                 scopes: ['openid', 'profile', 'email', 'User.Read'],
                 prompt: 'select_account'
             };
 
-            // Perform popup login
             const response = await window.msalInstance.loginPopup(loginRequest);
-
             if (response.accessToken) {
-                // Send access token to backend (same as Google flow)
                 const backendResponse = await authApi.post('/api/dj-rest-auth/microsoft/', {
                     access_token: response.accessToken
                 });
-
                 const { key } = backendResponse.data;
                 await loginUser({ key });
                 setShowLoginModal(false);
                 window.dispatchEvent(new Event('login'));
             }
         } catch (error) {
-            console.error('Microsoft authentication error:', error);
+            logger.error('Microsoft authentication error:', error);
             toast.error('Microsoft login failed');
         }
     };
 
     const handleGitHubLogin = () => {
-        console.log('GitHub login button clicked in Navbar');
-
         const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
         const redirectUri = process.env.NEXT_PUBLIC_GITHUB_REDIRECT_URL;
         const scope = 'user:email';
 
-        console.log('GitHub config:', { clientId, redirectUri });
+        logger.debug('GitHub OAuth config:', { clientId: clientId?.substring(0, 10) + '...', redirectUri });
 
         if (!clientId) {
             toast.error('GitHub OAuth not configured');
@@ -173,52 +142,30 @@ export default function Navbar() {
         }
 
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${Date.now()}`;
-        console.log('Opening popup with URL:', authUrl);
-
         const popup = window.open(authUrl, 'github-login', 'width=500,height=600,scrollbars=yes,resizable=yes');
-        console.log('Popup opened:', popup);
 
-        // Listen for messages from popup window
         const handleMessage = (event) => {
-            console.log('Message received from origin:', event.origin);
-            console.log('Current window origin:', window.location.origin);
-            console.log('Message data:', event.data);
-
-            // More permissive origin check for debugging
             if (event.origin !== window.location.origin && event.origin !== 'http://localhost:3000') {
-                console.log('Origin mismatch, ignoring message');
                 return;
             }
 
-            console.log('Received message from popup:', event.data);
-
             if (event.data && event.data.type === 'GITHUB_AUTH_SUCCESS') {
                 const { code } = event.data;
-                console.log('GitHub auth code received:', code);
                 handleGitHubCallback(code);
-                // Close popup after successful authentication
-                if (popup && !popup.closed) {
-                    popup.close();
-                }
+                if (popup && !popup.closed) popup.close();
                 window.removeEventListener('message', handleMessage);
             } else if (event.data && event.data.type === 'GITHUB_AUTH_ERROR') {
-                console.log('GitHub auth error:', event.data.error);
                 toast.error('GitHub login failed');
-                if (popup && !popup.closed) {
-                    popup.close();
-                }
+                if (popup && !popup.closed) popup.close();
                 window.removeEventListener('message', handleMessage);
             }
         };
 
-        console.log('Adding message event listener');
         window.addEventListener('message', handleMessage);
 
-        // Fallback: check if popup closed manually
         const checkClosed = setInterval(() => {
             if (popup.closed) {
                 clearInterval(checkClosed);
-                console.log('Popup closed, removing message listener');
                 window.removeEventListener('message', handleMessage);
             }
         }, 1000);
@@ -226,48 +173,34 @@ export default function Navbar() {
 
     const handleGitHubCallback = async (code) => {
         try {
-            console.log('Processing GitHub auth with code:', code);
-
             if (code) {
-                const backendResponse = await authApi.post('/api/dj-rest-auth/github/', {
-                    code: code
-                });
-
-                console.log('Backend response:', backendResponse.data);
+                const backendResponse = await authApi.post('/api/dj-rest-auth/github/', { code });
                 const { key } = backendResponse.data;
                 await loginUser({ key });
                 setShowLoginModal(false);
                 window.dispatchEvent(new Event('login'));
                 toast.success('GitHub login successful!');
-
-                // Clean up any stored auth codes
                 localStorage.removeItem('github_auth_code');
             } else {
-                console.error('No authorization code provided');
                 toast.error('No authorization code received');
             }
         } catch (error) {
-            console.error('GitHub authentication error:', error);
+            logger.error('GitHub authentication error:', error);
             toast.error('GitHub login failed');
         }
     };
 
-    // handleMicrosoftCallback removed - now using MSAL popup flow
-    // Function to initialize Google SignIn
     const initGoogleSignIn = () => {
         const client = window.google.accounts.oauth2.initTokenClient({
             client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
             scope: "email profile",
-            redirect_uri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URL, // Update this
+            redirect_uri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URL,
             callback: handleCredentialResponse,
         });
-
-        // Request the authorization code
         client.requestAccessToken();
     };
 
     useEffect(() => {
-        // Load Google Identity Services SDK
         const googleScript = document.createElement('script');
         googleScript.src = 'https://accounts.google.com/gsi/client';
         googleScript.onload = () => {
@@ -275,138 +208,38 @@ export default function Navbar() {
         };
         document.body.appendChild(googleScript);
 
-        // Microsoft OAuth uses server-side flow, no client library needed
-
-        // Clean up
         return () => {
-            [googleScript].forEach(script => {
-                if (document.body.contains(script)) {
-                    document.body.removeChild(script);
-                }
-            });
+            if (document.body.contains(googleScript)) {
+                document.body.removeChild(googleScript);
+            }
         };
     }, []);
 
     const handleCredentialResponse = async (response) => {
         if (response.access_token) {
-            //console.log(response.access_token);
-            //return
             try {
                 const backendResponse = await authApi.post('/api/dj-rest-auth/google/', { access_token: response.access_token });
-                console.log(backendResponse.data)
                 const { key } = backendResponse.data;
                 await loginUser({ key });
-                /*
-                if (!backendResponse.ok) {
-                    throw new Error('Failed to authenticate with the backend');
-                }
-
-                 */
-
-                //const data = await backendResponse.json();
-                //localStorage.setItem('authToken', data.token); // Store the token or sessionToken as per your backend response
-                //console.log(setIsAuthenticated);
-                // setIsAuthenticated(true);
-                //setShowLoginModal(true);
-                //setIsLoggedIn(true);
                 setLoginMessage('Login successful');
                 setShowLoginModal(false);
-                // toast.success("Login successful");
-                // router.push('/videoGen');
-                //onOpenChange(false);
                 window.dispatchEvent(new Event('login'));
-
             } catch (error) {
-                console.error('Authentication error:', error);
+                logger.error('Authentication error:', error);
                 setLoginMessage('Login failed');
             }
         }
     };
 
-    // Check for authentication token on component mount
-    /*
-    useEffect(() => {
-        const checkAuthStatus = async () => {
-            try {
-                const response = await authApi.get('/api/dj-rest-auth/user/');
-                setIsAuthenticated(response.status === 200);
-            } catch (error) {
-                if (error.response) {
-                    // Check specifically for unauthorized or forbidden and silently handle
-                    if ([401, 403].includes(error.response.status)) {
-                        setIsAuthenticated(false);
-                    } else {
-                        // Only log unexpected errors
-                        console.error('Unexpected error checking authentication status:', error);
-                    }
-                } else {
-                    // Log if error response is not available (network issues, etc.)
-                    console.error('Network error or no response:', error);
-                }
-            }
-        };
-        checkAuthStatus();
-    }, [setIsAuthenticated]);
-
-     */
-
     const handleLoginLogout = async () => {
         if (isAuthenticated) {
             logoutUser();
             setIsLoading(false);
-            setFormData({
-                email: '',
-                password: '',
-            });
-            //await handleLogout();
+            setFormData({ email: '', password: '' });
         } else {
             setShowLoginModal(true);
         }
     };
-
-    /*
-    // Function to handle user logout
-    const handleLogout = async () => {
-
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            console.error('No token found');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${backendUrl}/api/dj-rest-auth/logout/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Token ${token}`,
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Logout failed');
-            }
-
-            localStorage.removeItem('authToken'); // Remove the stored token
-
-        try {
-            await authApi.post('/api/dj-rest-auth/logout/');
-            //console.log(setIsAuthenticated);
-            setIsAuthenticated(false);
-            //setIsLoggedIn(false);
-            setLoginMessage('Logged out successfully.');
-            toast.success('Logged out successfully!')
-            router.push('/'); // Redirect to home page
-        } catch (error) {
-            console.error('Logout error:', error);
-            toast.error('Failed to log out!');
-            //alert('Failed to log out.');
-        }
-    };
-
-     */
-
-
 
     const toggleForms = () => {
         setIsSignUp(!isSignUp);
@@ -423,184 +256,13 @@ export default function Navbar() {
         setRegisteredEmail('');
     };
 
-    // Add a state to hold the error messages
     const [formErrors, setFormErrors] = useState({
         email: '',
         password: '',
         password1: '',
         password2: '',
-        nonFieldErrors: '', // For general errors not tied to a specific field
+        nonFieldErrors: '',
     });
-
-    /* Old form submit function
-    const handleSubmit = async () => {
-        let endpoint, body;
-
-        // Reset form errors state on each submission attempt
-        setFormErrors({
-            email: '',
-            password: '',
-            password1: '',
-            password2: '',
-            nonFieldErrors: '',
-        });
-
-        if (isSignUp) {
-            // If signing up, include both password1 and password2 fields
-
-            endpoint = '/api/dj-rest-auth/registration/';
-            body = {
-                username: formData.email, // Optionally use email as username or generate a unique username
-                email: formData.email,
-                password1: formData.password,
-                password2: formData.password, // Assuming you have a state to capture password confirmation
-            };
-        } else {
-            // If logging in, include the username field with the email as its value
-            endpoint = '/api/dj-rest-auth/login/';
-            body = {
-                username: formData.email, // Send email as username for login
-                password: formData.password,
-            };
-        }
-
-        try {
-            const response = await authApi.post(endpoint, body);
-            //console.log(response);
-            //loginUser(body);
-
-            // Handle success. Maybe set authentication tokens, redirect, etc.
-            if (response.status === 200 || (isSignUp && response.status === 201)) {
-                const { key } = response.data;
-                localStorage.setItem('authToken', key);
-                authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
-                setIsAuthenticated(true);
-                //console.log(isAuthenticated);
-                setLoginMessage('Successful');
-                toast.success("Login successful");
-                window.dispatchEvent(new Event('login'));
-                setShowLoginModal(false);
-                onOpenChange(false); // Close modal on success
-                router.push('/videoGen'); // Redirect to another route if needed
-            }
-        } catch (error) {
-            const errorData = error.response.data;
-            let errors = { email: '', password: '', password1: '', password2: '', nonFieldErrors: '' };
-
-            // Handle non-field errors
-            if (errorData.non_field_errors) {
-                errors.nonFieldErrors = errorData.non_field_errors.join(' '); // Assuming it's an array
-            }
-
-            // Handle field-specific errors if errorData is not an array
-            if (!Array.isArray(errorData)) {
-                Object.keys(errorData).forEach(key => {
-                    // Join error messages if they're in an array
-                    errors[key] = Array.isArray(errorData[key]) ? errorData[key].join(' ') : errorData[key];
-                });
-            }
-
-            setFormErrors(errors);
-            console.error('Error:', error);
-            setFormErrors({ nonFieldErrors: 'An error occurred. Please try again.' });
-        }
-    };
-
-    */
-
-    /*
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true); // Start loading when the request starts
-        let endpoint, body;
-        const isSignUpProcess = isSignUp;  // Capture the state at the time of function call to use later in async operations
-
-        // Reset form errors state on each submission attempt
-        setFormErrors({
-            email: '',
-            password: '',
-            password1: '',
-            password2: '',
-            nonFieldErrors: '',
-        });
-
-        endpoint = isSignUpProcess ? '/api/dj-rest-auth/registration/' : '/api/dj-rest-auth/login/';
-        body = isSignUpProcess ? {
-            username: formData.email,
-            email: formData.email,
-            password1: formData.password,
-            password2: formData.password,
-        } : {
-            username: formData.email,
-            password: formData.password,
-        };
-
-        try {
-            const response = await authApi.post(endpoint, body);
-
-            if ((response.status === 204 || response.status === 200 || response.status === 201) && isSignUpProcess) {
-                // Registration successful, but needs email verification
-                setLoginMessage('Registration successful! Please check your email to verify your account.');
-                toast.success("Registration successful! Please check your email to verify your account.");
-                setIsLoading(false); // Stop loading on success
-                //setShowLoginModal(false); // Optionally close the modal or redirect
-                setRegisteredEmail(formData.email);
-                setFormData({ email: '', password: '' }); // Reset form data
-                verifyAuthentication(); // Additional function to verify authentication status
-                setRegistrationSuccess(true);
-                setShowResendButton(false);
-            } else if (!isSignUpProcess && response.status === 200) {
-                // Handle login success if this is part of the login process
-                const { key } = response.data;
-                localStorage.setItem('authToken', key);
-                authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
-                setIsAuthenticated(true);
-                //console.log(isAuthenticated);
-                setLoginMessage('Successful');
-                toast.success("Login successful");
-                window.dispatchEvent(new Event('login'));
-                setShowLoginModal(false);
-                verifyAuthentication();
-                //onOpenChange(false); // Close modal on success
-                //router.push('/videoGen'); // Redirect to another route if needed
-            }
-        } catch (error) {
-            setIsLoading(false); // Stop loading on error
-            if (error.response) {
-                const errorData = error.response.data;
-                let errors = {
-                    email: '',
-                    username: '',
-                    password: '',
-                    password1: '',
-                    password2: '',
-                    nonFieldErrors: '',
-                };
-
-                // Handle non-field errors
-                if (errorData.non_field_errors) {
-                    errors.nonFieldErrors = errorData.non_field_errors.join(' ');
-                }
-
-                // Handle field-specific errors
-                // Loop through errorData to find field-specific errors
-                for (const [key, value] of Object.entries(errorData)) {
-                    if (errors.hasOwnProperty(key)) { // Ensures only predefined fields are populated
-                        errors[key] = value.join(' '); // Join array of messages into a single string
-                    }
-                }
-
-                setFormErrors(errors);
-                toast.error("Please correct the errors and try again.");
-            } else {
-                // Network error or no response from the server
-                toast.error("Network error or no response from the server.");
-            }
-        } finally {
-            setIsLoading(false); // Ensure loading state is reset
-        }
-    };
-    */
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -615,7 +277,6 @@ export default function Navbar() {
         });
 
         if (isSignUp) {
-            // Registration
             try {
                 const response = await authApi.post('/api/dj-rest-auth/registration/', {
                     username: formData.email,
@@ -646,7 +307,7 @@ export default function Navbar() {
                         errors.nonFieldErrors = errorData.non_field_errors.join(' ');
                     }
                     for (const [key, value] of Object.entries(errorData)) {
-                        if (errors.hasOwnProperty(key)) {
+                        if (Object.prototype.hasOwnProperty.call(errors, key)) {
                             errors[key] = Array.isArray(value) ? value.join(' ') : value;
                         }
                     }
@@ -661,14 +322,13 @@ export default function Navbar() {
             return;
         }
 
-        // Classic login
         try {
             await loginUser({ email: formData.email, password: formData.password });
             setShowLoginModal(false);
             setLoginMessage('Login successful');
             window.dispatchEvent(new Event('login'));
         } catch (error) {
-            // loginUser already handles error/toast
+            // loginUser handles error toast
         } finally {
             setIsLoading(false);
         }
@@ -684,65 +344,25 @@ export default function Navbar() {
             toast.error('Failed to resend verification email.');
         }
     };
+
     const handleGoogleLoginClick = () => {
         if (window.googleLoaded) {
             initGoogleSignIn();
         } else {
-            console.error("Google Identity Services script not loaded yet.");
+            logger.error("Google Identity Services script not loaded yet.");
         }
     };
 
-    // Function to trigger password reset
-    /*
-    const handlePasswordReset = async () => {
-        if (!formData.email) {
-            toast.error('Please enter your email address.')
-            //alert('Please enter your email address.');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${backendUrl}/api/dj-rest-auth/password/reset/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email: formData.email }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to send password reset email');
-            }
-
-            const data = await response.json();
-            toast('If an account with that email exists, \na password reset email has been sent.', {
-                icon: '👏',
-            });
-            //alert('If an account with that email exists, a password reset email has been sent.');
-        } catch (error) {
-            console.error('Password reset error:', error);
-            toast.error('Failed to send password reset email.')
-            //alert('Failed to send password reset email.');
-        }
-    };
-
-     */
     const handlePasswordReset = async () => {
         if (!formData.email) {
             toast.error('Please enter your email address.');
             return;
         }
-
         try {
-            const response = await authApi.post('/api/dj-rest-auth/password/reset/', {
-                email: formData.email
-            });
-
-            toast('If an account with that email exists, a password reset email has been sent.', {
-                icon: '👏',
-            });
+            await authApi.post('/api/dj-rest-auth/password/reset/', { email: formData.email });
+            toast('If an account with that email exists, a password reset email has been sent.', { icon: '👏' });
         } catch (error) {
-            console.error('Password reset error:', error);
+            logger.error('Password reset error:', error);
             toast.error('Failed to send password reset email.');
         }
     };
@@ -757,22 +377,17 @@ export default function Navbar() {
         user: <TagUser className="text-danger" fill="currentColor" size={30} />,
     };
 
-    const getTokenFromLocalStorage = () => {
-        return localStorage.getItem('authToken');
-    };
-
     return (
         <nav className="bg-transparent">
-
             <div className="container mx-auto flex justify-between items-center px-4">
                 <NextLink href="/" className="relative overflow-hidden h-15 flex items-center mr-4">
                     <Image src="/images/ai_video_logo_2.png" alt="Logo"
-                           className="w-20 h-15"
-                           style={{
-                               position: 'relative', // Allows you to fine-tune the position
-                               top: '50%',          // Centers the logo vertically
-                               transform: 'translateY(-1%)', // Ensures the centering is accurate
-                           }}
+                        className="w-20 h-15"
+                        style={{
+                            position: 'relative',
+                            top: '50%',
+                            transform: 'translateY(-1%)',
+                        }}
                     />
                 </NextLink>
                 <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
@@ -784,11 +399,12 @@ export default function Navbar() {
                         )}
                     </svg>
                 </button>
+                
                 {/* Desktop Menu */}
                 <div className="hidden flex-grow md:flex items-center justify-start space-x-4">
-                    <NextLink href="/" >Home</NextLink>
-                    <NextLink href="/dashboard" >Dashboard</NextLink>
-                    <NextLink href="/videoGen" >AI Video Generator</NextLink>
+                    <NextLink href="/">Home</NextLink>
+                    <NextLink href="/dashboard">Dashboard</NextLink>
+                    <NextLink href="/videoGen">AI Video Generator</NextLink>
                     <Dropdown>
                         <DropdownTrigger>
                             <Button
@@ -801,421 +417,220 @@ export default function Navbar() {
                                 AI Image Generation
                             </Button>
                         </DropdownTrigger>
-                        <DropdownMenu
-                            aria-label="FaceSwap features"
-                            className="w-[340px]"
-                            itemClasses={{
-                                base: "gap-1",
-                            }}
-                        >
-                            <DropdownItem
-                                key="AiImageGen"
-                                startContent={icons.flash}
-                                href="/imageGen"
-                            >
+                        <DropdownMenu aria-label="FaceSwap features" className="w-[340px]" itemClasses={{ base: "gap-1" }}>
+                            <DropdownItem key="AiImageGen" startContent={icons.flash} href="/imageGen">
                                 AI Image Generation / Editing
                             </DropdownItem>
-                            <DropdownItem
-                                key="VideoFaceSwap"
-                                startContent={icons.user}
-                                href="/faceSwap"
-                            >
+                            <DropdownItem key="VideoFaceSwap" startContent={icons.user} href="/faceSwap">
                                 Video Face Swap
                             </DropdownItem>
-                            <DropdownItem
-                                key="PhotoFaceSwap"
-                                startContent={icons.activity}
-                                href="/photoFaceSwap"
-                            >
+                            <DropdownItem key="PhotoFaceSwap" startContent={icons.activity} href="/photoFaceSwap">
                                 Photo Face Swap
                             </DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
 
                     {isAuthenticated ? (
-                    <NextLink href={`${chatbotUrl}/?token=${getTokenFromLocalStorage()}`} className="cursor-pointer">
-                        AI Slide Deck Generator
-                    </NextLink>
-                        ) : (
+                        <NextLink href={`${chatbotUrl}/?token=${tokenStorage.get()}`} className="cursor-pointer">
+                            AI Slide Deck Generator
+                        </NextLink>
+                    ) : (
                         <a onClick={handleLoginLogout} className="cursor-pointer">AI Slide Deck Generator</a>
-                        )}
+                    )}
 
                     {isAuthenticated ? (
-                        <NextLink href={`${mynotebooklmUrl}/?token=${getTokenFromLocalStorage()}`} className="cursor-pointer">
+                        <NextLink href={`${mynotebooklmUrl}/?token=${tokenStorage.get()}`} className="cursor-pointer">
                             MyNoteBookLM
                         </NextLink>
                     ) : (
                         <a onClick={handleLoginLogout} className="cursor-pointer">MyNoteBookLM</a>
                     )}
-
                 </div>
+                
                 <div className="hidden flex-grow md:flex items-center justify-end">
                     {isAuthenticated ? (
-                        <Button color="warning" variant="ghost" onPress={handleLoginLogout} >
-                            Logout
-                        </Button>
+                        <Button color="warning" variant="ghost" onPress={handleLoginLogout}>Logout</Button>
                     ) : (
-                        <Button color="warning" variant="ghost" onPress={handleLoginLogout}>
-                            Login
-                        </Button>
+                        <Button color="warning" variant="ghost" onPress={handleLoginLogout}>Login</Button>
                     )}
                 </div>
 
                 {/* Mobile Menu */}
-                <div
-                    className={`${
-                        mobileMenuOpen ? "fixed inset-0" : "hidden"
-                    } bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center space-y-4 md:hidden`}
-                >
-                    <NextLink href="/" className="text-xl">
-                        Home
-                    </NextLink>
-                    <NextLink href="/dashboard" className="text-xl">
-                        Dashboard
-                    </NextLink>
-                    <NextLink href="/videoGen" className="text-xl">
-                        AI Video Generator
-                    </NextLink>
+                <div className={`${mobileMenuOpen ? "fixed inset-0" : "hidden"} bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center space-y-4 md:hidden`}>
+                    <NextLink href="/" className="text-xl">Home</NextLink>
+                    <NextLink href="/dashboard" className="text-xl">Dashboard</NextLink>
+                    <NextLink href="/videoGen" className="text-xl">AI Video Generator</NextLink>
                     <Dropdown>
                         <DropdownTrigger>
-                            <Button
-                                disableRipple
-                                className="text-lg p-0 bg-transparent data-[hover=true]:bg-transparent"
-                                endContent={icons.chevron}
-                                radius="sm"
-                                variant="light"
-                            >
+                            <Button disableRipple className="text-lg p-0 bg-transparent" endContent={icons.chevron} radius="sm" variant="light">
                                 AI Image Generation
                             </Button>
                         </DropdownTrigger>
-                        <DropdownMenu
-                            aria-label="FaceSwap features"
-                            className="w-[340px]"
-                            itemClasses={{
-                                base: "gap-1",
-                            }}
-                        >
-                            <DropdownItem
-                                key="AIImageGeneration"
-                                startContent={icons.user}
-                                href="/imageGen"
-                            >
+                        <DropdownMenu aria-label="FaceSwap features" className="w-[340px]" itemClasses={{ base: "gap-1" }}>
+                            <DropdownItem key="AIImageGeneration" startContent={icons.user} href="/imageGen">
                                 AI Image Generation
                             </DropdownItem>
-                        </DropdownMenu>
-                    </Dropdown>
-                    <Dropdown>
-                        <DropdownTrigger>
-                            <Button
-                                disableRipple
-                                className="text-lg p-0 bg-transparent data-[hover=true]:bg-transparent"
-                                endContent={icons.chevron}
-                                radius="sm"
-                                variant="light"
-                            >
-                                AI Image Generation
-                            </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu
-                            aria-label="FaceSwap features"
-                            className="w-[340px]"
-                            itemClasses={{
-                                base: "gap-1",
-                            }}
-                        >
-                            <DropdownItem
-                                key="AIImageGeneration"
-                                startContent={icons.user}
-                                href="/imageGen"
-                            >
+                            <DropdownItem key="VideoFaceSwap" startContent={icons.user} href="/faceSwap">
                                 Video Face Swap
                             </DropdownItem>
-                            <DropdownItem
-                                key="VideoFaceSwap"
-                                startContent={icons.user}
-                                href="/faceSwap"
-                            >
-                                Video Face Swap
-                            </DropdownItem>
-                            <DropdownItem
-                                key="PhotoFaceSwap"
-                                startContent={icons.activity}
-                                href="/photoFaceSwap"
-                            >
+                            <DropdownItem key="PhotoFaceSwap" startContent={icons.activity} href="/photoFaceSwap">
                                 Photo Face Swap
                             </DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
 
                     {isAuthenticated ? (
-                        <NextLink
-                            href={`${chatbotUrl}/?token=${getTokenFromLocalStorage()}`}
-                            className="cursor-pointer text-xl"
-                        >
+                        <NextLink href={`${chatbotUrl}/?token=${tokenStorage.get()}`} className="cursor-pointer text-xl">
                             AI Slide Deck Generator
                         </NextLink>
                     ) : (
-                        <a onClick={handleLoginLogout} className="cursor-pointer text-xl">
-                            AI Slide Deck Generator
-                        </a>
+                        <a onClick={handleLoginLogout} className="cursor-pointer text-xl">AI Slide Deck Generator</a>
                     )}
 
                     {isAuthenticated ? (
-                        <NextLink
-                            href={`${mynotebooklmUrl}/?token=${getTokenFromLocalStorage()}`}
-                            className="cursor-pointer text-xl"
-                        >
+                        <NextLink href={`${mynotebooklmUrl}/?token=${tokenStorage.get()}`} className="cursor-pointer text-xl">
                             MyNoteBookLM
                         </NextLink>
                     ) : (
-                        <a onClick={handleLoginLogout} className="cursor-pointer text-xl">
-                            MyNoteBookLM
-                        </a>
+                        <a onClick={handleLoginLogout} className="cursor-pointer text-xl">MyNoteBookLM</a>
                     )}
 
-                    <button
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="text-white p-2"
-                    >
+                    <button onClick={() => setMobileMenuOpen(false)} className="text-white p-2">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
             </div>
 
-            {/* Modal Popup*/}
-                <Modal
-                    backdrop={backdrop}
-                    isOpen={showLoginModal}
-                    onOpenChange={onOpenChange}
-                    onClose={() => {
-                        setShowLoginModal(false);
-                        //onOpenChange(false);
-                        setIsSignUp(false);
-                        setRegistrationSuccess(false);
-                        setShowResendButton(false);
-                        setFormData({ email: '', password: '' });
-                        setFormErrors({
-                            email: '',
-                            password: '',
-                            password1: '',
-                            password2: '',
-                            nonFieldErrors: '',
-                        });
-                        setRegisteredEmail('');
-                    }}
-                    placement="top-center"
-                    motionProps={{
-                        variants: {
-                            enter: {
-                                y: 0,
-                                opacity: 1,
-                                transition: {
-                                    duration: 0.3,
-                                    ease: "easeOut",
-                                },
-                            },
-                            exit: {
-                                y: -20,
-                                opacity: 0,
-                                transition: {
-                                    duration: 0.2,
-                                    ease: "easeIn",
-                                },
-                            },
-                        }
-                    }}
-                >
-                    <ModalContent as="form" onSubmit={handleSubmit}>
-                        <ModalHeader className="flex flex-col gap-1 items-center">
-                            <h3 className="text-lg font-bold">{isSignUp ? "Create a new account" : "Log in"}</h3>
-                        </ModalHeader>
-                        <Divider/>
-                        <ModalBody>
-                            {!registrationSuccess ? (
-                                <div className="flex flex-col gap-4">
-                                    {/* Social Media Login Buttons */}
-                                    <Button
-                                        startContent={<GoogleLogo />}
-                                        color="secondary"
-                                        auto
-                                        onPress={handleGoogleLoginClick}
-                                    >
-                                        Continue with Google
-                                    </Button>
-                                    <Button
-                                        startContent={<AppleLogo />}
-                                        auto
-                                        onPress={appleLogin}
-                                        color="warning"
-                                        className="text-white"
-                                    >
-                                        Continue with Apple
-                                    </Button>
-                                    <Button
-                                        startContent={<GitHubLogo />}
-                                        color="default"
-                                        auto
-                                        onPress={handleGitHubLogin}
-                                        className="bg-orange-500 text-white hover:bg-orange-600 border border-orange-400"
-                                    >
-                                        Continue with GitHub
-                                    </Button>
-                                    <Button
-                                        startContent={<MicrosoftLogo />}
-                                        color="primary"
-                                        auto
-                                        onPress={handleMicrosoftLogin}
-                                        className="bg-blue-600 text-white hover:bg-blue-700"
-                                    >
-                                        Continue with Microsoft
-                                    </Button>
+            {/* Modal Popup */}
+            <Modal
+                backdrop={backdrop}
+                isOpen={showLoginModal}
+                onOpenChange={onOpenChange}
+                onClose={() => {
+                    setShowLoginModal(false);
+                    setIsSignUp(false);
+                    setRegistrationSuccess(false);
+                    setShowResendButton(false);
+                    setFormData({ email: '', password: '' });
+                    setFormErrors({ email: '', password: '', password1: '', password2: '', nonFieldErrors: '' });
+                    setRegisteredEmail('');
+                }}
+                placement="top-center"
+                motionProps={{
+                    variants: {
+                        enter: { y: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
+                        exit: { y: -20, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } },
+                    }
+                }}
+            >
+                <ModalContent as="form" onSubmit={handleSubmit}>
+                    <ModalHeader className="flex flex-col gap-1 items-center">
+                        <h3 className="text-lg font-bold">{isSignUp ? "Create a new account" : "Log in"}</h3>
+                    </ModalHeader>
+                    <Divider />
+                    <ModalBody>
+                        {!registrationSuccess ? (
+                            <div className="flex flex-col gap-4">
+                                <Button startContent={<GoogleLogo />} color="secondary" auto onPress={handleGoogleLoginClick}>
+                                    Continue with Google
+                                </Button>
+                                <Button startContent={<AppleLogo />} auto onPress={appleLogin} color="warning" className="text-white">
+                                    Continue with Apple
+                                </Button>
+                                <Button startContent={<GitHubLogo />} color="default" auto onPress={handleGitHubLogin} className="bg-orange-500 text-white hover:bg-orange-600 border border-orange-400">
+                                    Continue with GitHub
+                                </Button>
+                                <Button startContent={<MicrosoftLogo />} color="primary" auto onPress={handleMicrosoftLogin} className="bg-blue-600 text-white hover:bg-blue-700">
+                                    Continue with Microsoft
+                                </Button>
 
-                                    {/* Email and Password Inputs */}
-                                    <Input
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        autoFocus
-                                        endContent={
-                                            <MailIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
-                                        }
-                                        label="Email"
-                                        placeholder="Enter your email"
-                                        variant="bordered"
-                                        error={!!formErrors.email || !!formErrors.username}
-                                    />
-                                    {formErrors.username && <p className="text-red-500">{formErrors.username}</p>}
-                                    {formErrors.email && <p className="text-red-500">{formErrors.email}</p>}
-                                    <Input
-                                        value={formData.password}
-                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                        endContent={
-                                            <LockIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
-                                        }
-                                        label="Password"
-                                        placeholder="Enter your password"
-                                        type="password"
-                                        variant="bordered"
-                                    />
-                                    {formErrors.password && <p className="text-red-500">{formErrors.password}</p>}
-                                    {formErrors.password1 && <p className="text-red-500">{formErrors.password1}</p>}
-                                    {formErrors.password2 && <p className="text-red-500">{formErrors.password2}</p>}
+                                <Input
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    autoFocus
+                                    endContent={<MailIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />}
+                                    label="Email"
+                                    placeholder="Enter your email"
+                                    variant="bordered"
+                                    isInvalid={!!formErrors.email || !!formErrors.username}
+                                />
+                                {formErrors.username && <p className="text-red-500">{formErrors.username}</p>}
+                                {formErrors.email && <p className="text-red-500">{formErrors.email}</p>}
+                                <Input
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    endContent={<LockIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />}
+                                    label="Password"
+                                    placeholder="Enter your password"
+                                    type="password"
+                                    variant="bordered"
+                                />
+                                {formErrors.password && <p className="text-red-500">{formErrors.password}</p>}
+                                {formErrors.password1 && <p className="text-red-500">{formErrors.password1}</p>}
+                                {formErrors.password2 && <p className="text-red-500">{formErrors.password2}</p>}
 
+                                {isSignUp ? (
+                                    <Checkbox defaultSelected size="sm">
+                                        I agree to the <Link href="#" size="sm">Terms of Service</Link> and <Link href="#" size="sm">Privacy Policy</Link>
+                                    </Checkbox>
+                                ) : (
+                                    <div className="flex py-2 px-1 justify-between">
+                                        <Checkbox size="sm">Remember me</Checkbox>
+                                        <Link color="primary" href="#" size="sm" onClick={handlePasswordReset}>Forgot password?</Link>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="text-center">
+                                <p>Registration successful! Please check your email to verify your account.</p>
+                            </div>
+                        )}
+                    </ModalBody>
+                    <ModalFooter>
+                        {!registrationSuccess ? (
+                            <div style={{ width: '100%', textAlign: 'center', padding: '20px' }}>
+                                <Button
+                                    isLoading={isLoading}
+                                    color="primary"
+                                    type="submit"
+                                    className="w-full capitalize mb-3 bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg"
+                                    spinner={
+                                        <svg className="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor" />
+                                        </svg>
+                                    }
+                                >
+                                    {isSignUp ? 'Sign up' : 'Sign in'}
+                                </Button>
+                                {loginMessage && <p>{loginMessage}</p>}
+                                {formErrors.nonFieldErrors && <p className="text-red-500">{formErrors.nonFieldErrors}</p>}
+                                <p>
                                     {isSignUp ? (
-                                        <Checkbox defaultSelected size="sm">
-                                            I agree to the{' '}
-                                            <Link href="#" size="sm">
-                                                Terms of Service
-                                            </Link>{' '}
-                                            and{' '}
-                                            <Link href="#" size="sm">
-                                                Privacy Policy
-                                            </Link>
-                                        </Checkbox>
+                                        <>Already a member? <Link color="primary" onPress={toggleForms} style={{ cursor: 'pointer' }}>Log in here!</Link></>
                                     ) : (
-                                        <div className="flex py-2 px-1 justify-between">
-                                            <Checkbox size="sm">Remember me</Checkbox>
-                                            <Link color="primary" href="#" size="sm" onClick={handlePasswordReset}>
-                                                Forgot password?
-                                            </Link>
-                                        </div>
+                                        <>Not a member? <Link color="primary" onPress={toggleForms} style={{ cursor: 'pointer' }}>Sign up now!</Link></>
                                     )}
-                                </div>
-                            ) : (
-                                <div className="text-center">
-                                    <p>Registration successful! Please check your email to verify your account.</p>
-                                </div>
-                            )}
-                        </ModalBody>
-                        <ModalFooter>
-                            {!registrationSuccess ? (
-                                <div style={{ width: '100%', textAlign: 'center', padding: '20px' }}>
-                                    <Button
-                                        isLoading={isLoading}
-                                        color="primary"
-                                        type="submit"
-                                        className="w-full capitalize mb-3 bg-gradient-to-tr from-pink-500 to-yellow-500 text-white shadow-lg"
-                                        spinner={
-                                            <svg
-                                                className="animate-spin h-5 w-5 text-current"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                />
-                                                <path
-                                                    className="opacity-75"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                    fill="currentColor"
-                                                />
-                                            </svg>
-                                        }
-                                    >
-                                        {isSignUp ? 'Sign up' : 'Sign in'}
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ width: '100%', textAlign: 'center', padding: '20px' }}>
+                                {showResendButton ? (
+                                    <Button color="success" flat auto onPress={resendVerificationEmail} className="mt-4">
+                                        Resend Verification Email
                                     </Button>
-                                    {loginMessage && <p>{loginMessage}</p>}
-                                    {formErrors.nonFieldErrors && (
-                                        <p className="text-red-500">{formErrors.nonFieldErrors}</p>
-                                    )}
+                                ) : (
+                                    <p>If you haven&apos;t received the email, please wait a moment or check your spam folder.</p>
+                                )}
+                            </div>
+                        )}
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
 
-                                    <p>
-                                        {isSignUp ? (
-                                            <>
-                                                Already a member?{' '}
-                                                <Link color="primary" onPress={toggleForms} style={{ cursor: 'pointer' }}>
-                                                    Log in here!
-                                                </Link>
-                                            </>
-                                        ) : (
-                                            <>
-                                                Not a member?{' '}
-                                                <Link color="primary" onPress={toggleForms} style={{ cursor: 'pointer' }}>
-                                                    Sign up now!
-                                                </Link>
-                                            </>
-                                        )}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div style={{ width: '100%', textAlign: 'center', padding: '20px' }}>
-                                    {showResendButton ? (
-                                        <Button
-                                            color="success"
-                                            flat
-                                            auto
-                                            onPress={resendVerificationEmail}
-                                            className="mt-4"
-                                        >
-                                            Resend Verification Email
-                                        </Button>
-                                    ) : (
-                                        <p>
-                                            If you haven&apos;t received the email, please wait a moment or check your spam
-                                            folder.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                        </ModalFooter>
-
-                    </ModalContent>
-                </Modal>
-
-                <Toaster />
+            <Toaster />
         </nav>
     );
-};
-
+}

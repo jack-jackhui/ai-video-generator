@@ -2,7 +2,7 @@
 "use client";
 import React, {Suspense, useEffect, useState} from 'react';
 import { useAuth } from "../context/AuthContext";
-import FaceSwapLayout from './faceSwapLayouts';
+import FaceSwapLayout from './FaceSwapLayout';
 
 import {Button, Card, CardBody, CardFooter, CardHeader,
     Image, Link, Input,
