@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { tokenStorage } from '../../lib/auth/tokenStorage';
+import { logger } from '../../lib/logger';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -37,7 +38,7 @@ authApi.interceptors.response.use(
     async error => {
         if (error.response?.status === 401 && !error.config._retry) {
             error.config._retry = true;
-            // User is not logged in or session expired
+            logger.debug('Unauthorized — session may have expired');
         }
         return Promise.reject(error);
     }
