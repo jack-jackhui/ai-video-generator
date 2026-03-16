@@ -1,5 +1,6 @@
 # CI Workflow - Next.js
 # Runs on every PR and push to main
+# Docker build/deploy is handled by docker-deploy.yml
 
 name: CI
 
@@ -9,7 +10,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  lint-test-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +27,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        continue-on-error: false
+
+      - name: Test
+        run: npm run test:ci
 
       - name: Build
         run: npm run build
