@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import ImageGenLayout from './imageGenLayouts';
+import ImageGenLayout from './ImageGenLayout';
 import ImageGenApi from '../api/ImageGenApi';
 import { useAuth } from '../context/AuthContext';
 import { FaArrowUpFromBracket } from "react-icons/fa6";

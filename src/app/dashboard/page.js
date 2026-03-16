@@ -7,7 +7,7 @@ import {Card, CardHeader, CardBody, CardFooter, Image, Button} from "@nextui-org
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react'
 import {Link} from "@nextui-org/react";
-import DashboardLayout from './DashboardLayouts';
+import DashboardLayout from './DashboardLayout';
 export default function Dashboard() {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
     //const router = useRouter();
