@@ -7,6 +7,9 @@ import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
 
+// Configurable post-login redirect path
+const POST_LOGIN_REDIRECT = process.env.NEXT_PUBLIC_POST_LOGIN_REDIRECT || '/videoGen';
+
 export function useAuth() {
     return useContext(AuthContext);
 }
@@ -47,7 +50,7 @@ export const AuthProvider = ({ children }) => {
             authApi.defaults.headers.common['Authorization'] = `Token ${params.key}`;
             setIsAuthenticated(true);
             toast.success("Login successful");
-            router.push('/videoGen');
+            router.push(POST_LOGIN_REDIRECT);
             return;
         }
         // Classic login
@@ -62,7 +65,7 @@ export const AuthProvider = ({ children }) => {
                 authApi.defaults.headers.common['Authorization'] = `Token ${key}`;
                 setIsAuthenticated(true);
                 toast.success("Login successful");
-                router.push('/videoGen');
+                router.push(POST_LOGIN_REDIRECT);
             } else {
                 throw new Error("Login failed with status: " + response.status);
             }
