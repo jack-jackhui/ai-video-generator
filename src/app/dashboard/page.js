@@ -1,10 +1,10 @@
 // dashboard/page.js
 "use client";
-import React, { useEffect, useState, useCallback} from 'react';
-import {Card, CardHeader, CardBody, CardFooter, Image, Button} from "@nextui-org/react";
+import React, { useEffect, useState, useCallback } from 'react';
+import { Card, CardHeader, CardBody, CardFooter, Image, Button, Skeleton } from "@nextui-org/react";
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import {Link} from "@nextui-org/react";
+import { Link } from "@nextui-org/react";
 import DashboardLayout from './DashboardLayout';
 import { tokenStorage } from '../../lib/auth/tokenStorage';
 export default function Dashboard() {
@@ -66,24 +66,37 @@ export default function Dashboard() {
 
                     </CardHeader>
                     <Suspense>
-                    <CardBody>
-                        {loading && <p>Loading video...</p>}
-                        {!loading && downloadUrl && (
-                            <video controls className="w-full">
-                                <source src={downloadUrl} type="video/mp4" />
-                                Your browser does not support the video tag.
-                            </video>
-                        )}
-                        {!taskId && !downloadUrl &&
-                            <Image
-                                removeWrapper
-                                alt="Relaxing app background"
-                                className="z-0 w-full h-full object-cover"
-                                src="/images/hero3.webp"
-                            />
-                        }
-
-                    </CardBody>
+                        <CardBody>
+                            {loading && (
+                                <div className="space-y-3">
+                                    <Skeleton className="w-full rounded-lg">
+                                        <div className="h-64 rounded-lg bg-default-300"></div>
+                                    </Skeleton>
+                                    <div className="flex gap-4">
+                                        <Skeleton className="w-1/4 rounded-lg">
+                                            <div className="h-4 rounded-lg bg-default-200"></div>
+                                        </Skeleton>
+                                        <Skeleton className="w-1/4 rounded-lg">
+                                            <div className="h-4 rounded-lg bg-default-200"></div>
+                                        </Skeleton>
+                                    </div>
+                                </div>
+                            )}
+                            {!loading && downloadUrl && (
+                                <video controls className="w-full">
+                                    <source src={downloadUrl} type="video/mp4" />
+                                    Your browser does not support the video tag.
+                                </video>
+                            )}
+                            {!taskId && !downloadUrl && !loading && (
+                                <Image
+                                    removeWrapper
+                                    alt="Relaxing app background"
+                                    className="z-0 w-full h-full object-cover"
+                                    src="/images/hero3.webp"
+                                />
+                            )}
+                        </CardBody>
                     </Suspense>
 
                     <CardFooter className="absolute bg-black/40 bottom-0 z-10 border-t-1 border-default-600 dark:border-default-100">

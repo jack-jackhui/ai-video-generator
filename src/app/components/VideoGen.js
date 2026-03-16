@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from "../context/AuthContext";
 import videoApi from "../api/VideoApi";
-import { Textarea, Card, CardBody,
+import {
+    Textarea, Card, CardBody,
     Dropdown, DropdownTrigger, DropdownMenu, DropdownItem,
     RadioGroup, Radio, Button, Checkbox, Modal, ModalContent,
     ModalHeader, ModalBody, ModalFooter, CircularProgress
@@ -10,15 +11,12 @@ import { Textarea, Card, CardBody,
 import { useRouter } from 'next/navigation';
 import voicesData from '../videoGen/voice';
 import toast from 'react-hot-toast';
+import { useDebouncedCallback } from 'use-debounce';
 
 const VideoGeneratorPage = () => {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
-    //const apiKey = process.env.NEXT_PUBLIC_VIDEO_API_KEY;
-    // console.log(apiUrl);
-    // State hooks for the video generator parameters
-    const [backendOption, setBackendOption] = useState('default'); // 'default' or 'sora'
+    const [backendOption, setBackendOption] = useState('default');
     const { isAuthenticated, setShowLoginModal } = useAuth();
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const router = useRouter();
     const [visible, setVisible] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,13 +143,10 @@ const VideoGeneratorPage = () => {
         setSubtitleFont(selectedItem);
     };
 
-    // Handler to submit the video generator form
-    const handleSubmit = async () => {
-
-        // Check if the video subject and audio are selected
+    // Handler to submit the video generator form (debounced to prevent spam clicking)
+    const handleSubmit = useDebouncedCallback(async () => {
         if (!videoSubject.trim()) {
-            toast.error("Please enter a video subject/description.")
-            //alert("Please enter a video subject.");
+            toast.error("Please enter a video subject/description.");
             return;
         }
 
@@ -237,13 +232,11 @@ const VideoGeneratorPage = () => {
                 throw new Error(result.message || 'Submission failed');
             }
         } catch (error) {
-            //console.error(error);
             toast.error("Error submitting video data: " + error.message);
             setIsSubmitting(false);
             setVisible(false);
         }
-
-    };
+    }, 1000); // 1 second debounce to prevent spam clicking
 
     const generateVideoScript = async () => {
         // Ensure there is a video subject before making the API call
