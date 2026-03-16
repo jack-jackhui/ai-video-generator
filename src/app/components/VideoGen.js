@@ -1,16 +1,15 @@
 // components/VideoGenerator.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from "../context/AuthContext";
 import videoApi from "../api/VideoApi";
-import { Textarea, Card, CardBody, Input,
+import { Textarea, Card, CardBody,
     Dropdown, DropdownTrigger, DropdownMenu, DropdownItem,
     RadioGroup, Radio, Button, Checkbox, Modal, ModalContent,
-    ModalHeader, ModalBody, ModalFooter, CircularProgress, useDisclosure
+    ModalHeader, ModalBody, ModalFooter, CircularProgress
 } from '@nextui-org/react';
-import { Link } from 'next/link';
 import { useRouter } from 'next/navigation';
 import voicesData from '../videoGen/voice';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const VideoGeneratorPage = () => {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
@@ -356,20 +355,19 @@ const VideoGeneratorPage = () => {
 
     const videoRef = useRef(null);
     const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-    const videoSources = [
+    const videoSources = useMemo(() => [
         '/videos/bg1.mp4',
-        //'/videos/bg2.mp4',
         '/videos/bg3.mp4',
         '/videos/bg4.mp4',
         '/videos/bg5.mp4',
         '/videos/bg6.mp4',
         '/videos/bg7.mp4',
-    ];
+    ], []);
 
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videoSources.length);
-        }, 5000); // Change video every 10 seconds
+        }, 5000);
 
         return () => clearInterval(interval);
     }, [videoSources.length]);
@@ -381,27 +379,8 @@ const VideoGeneratorPage = () => {
         }
     }, [currentVideoIndex]);
 
-    const checkTaskStatus = async () => {
-        /*
-        const apiKey = localStorage.getItem('authToken'); // Retrieve the token from local storage
-
-        if (!apiKey) {
-            console.log("You must be logged in to perform this action.");
-            return;
-        }
-
-         */
+    const checkTaskStatus = useCallback(async () => {
         try {
-            /*
-            const response = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`,{
-                method: 'GET',
-                credentials: 'include'
-                }
-            );
-            const result = await response.json();
-
-             */
-            //console.log("======", result.data.progress);
             const response = await videoApi.get(`/api/v1/tasks/${taskId}`);
             const result = response.data;
             setTaskProgress(result.data.progress);
@@ -409,28 +388,20 @@ const VideoGeneratorPage = () => {
                 setTaskCompleted(true);
                 setIsSubmitting(false);
             }
-            // Handle other statuses as needed
         } catch (error) {
             console.error("Error fetching task status:", error);
         }
-    };
-
+    }, [taskId]);
 
     useEffect(() => {
-        let intervalId;
+        if (!taskId || taskCompleted) return;
 
-        if (taskId && !taskCompleted) {
-            intervalId = setInterval(() => {
-                checkTaskStatus();
-            }, 30000); // Poll every 30 seconds
-        }
+        const intervalId = setInterval(() => {
+            checkTaskStatus();
+        }, 30000);
 
-        return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [taskId, taskCompleted]);
+        return () => clearInterval(intervalId);
+    }, [taskId, taskCompleted, checkTaskStatus]);
 
     //console.log("======", isInvalid.videoSubject);
 

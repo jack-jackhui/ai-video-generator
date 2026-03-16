@@ -1,17 +1,16 @@
-// faceSwap/photoFaceSwap.js
+// photoFaceSwap/page.js
 "use client";
-import React, {Suspense, useEffect, useState} from 'react';
+import React, {Suspense, useEffect, useState, useCallback, useRef} from 'react';
 import { useAuth } from "../context/AuthContext";
 import PhotoFaceSwapLayout from './PhotoFaceSwapLayout';
+import { tokenStorage } from '../../lib/auth/tokenStorage';
 
-import {Button, Card, CardBody, CardFooter, CardHeader,
-    Image, Link, Input,
-    Divider,
+import {Button, Card, CardBody,
+    Image, Link,
     Modal,
     ModalContent,
-    ModalHeader,
     ModalBody,
-    ModalFooter, CircularProgress
+    CircularProgress
 } from "@nextui-org/react";
 import toast from "react-hot-toast";
 
@@ -31,39 +30,39 @@ export default function Page() {
     const [targetImage, setTargetImage] = useState('/images/Scarlett_Johansson.png');  // Default target image
     const [sourceFile, setSourceFile] = useState(null);
     const [targetFile, setTargetFile] = useState(null);
+    const abortControllerRef = useRef(null);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (taskId) {
-                checkTaskStatus();
-            }
-        }, 120000);  // Poll every 2 minutes
-
-        return () => clearInterval(interval);
-    }, [taskId]);
-
-    const checkTaskStatus = async () => {
+    const checkTaskStatus = useCallback(async () => {
         try {
             const response = await fetch(`${apiUrl}/task-status/${taskId}`);
             const data = await response.json();
-            if (response.ok && data.status !== 'In progress' && data.status !== 'Failed' ) {
-                //console.log(data.status);
+            if (response.ok && data.status !== 'In progress' && data.status !== 'Failed') {
                 setIsLoading(false);
                 setFeedbackMessage('Process ' + data.status);
-                setDownloadUrl(`${apiUrl}/downloads/${taskId}/${targetFile.name}`);
-                setTaskId(null);  // Reset task ID after completion
-            } else if (data.status == 'Failed') {
+                setDownloadUrl(`${apiUrl}/downloads/${taskId}/${targetFile?.name || 'result'}`);
+                setTaskId(null);
+            } else if (data.status === 'Failed') {
                 setIsLoading(false);
                 setFeedbackMessage('Process ' + data.status);
-                toast.error("Swap Failed! Please try again.")
+                toast.error("Swap Failed! Please try again.");
                 setTaskId(null);
             }
         } catch (error) {
             console.error('Error checking task status:', error);
             setIsLoading(false);
-            toast.error("Swap Failed! Please try again.")
+            toast.error("Swap Failed! Please try again.");
         }
-    };
+    }, [apiUrl, taskId, targetFile]);
+
+    useEffect(() => {
+        if (!taskId) return;
+
+        const interval = setInterval(() => {
+            checkTaskStatus();
+        }, 120000);
+
+        return () => clearInterval(interval);
+    }, [taskId, checkTaskStatus]);
     const toggleUploadModal = () => {
         setShowUploadModal(!showUploadModal); // Toggle the state to show or hide the modal
         if (!showUploadModal) {
@@ -103,23 +102,27 @@ export default function Page() {
     };
 
     const performSwap = async () => {
-        // Ensure both images are selected
         if (!sourceFile || !targetFile) {
             setFeedbackMessage("Please upload both source and target files.");
             return;
         }
 
-        const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
+        const token = tokenStorage.get();
 
         if (!token) {
             setFeedbackMessage("You must be logged in to perform this action.");
             return;
         }
 
+        // Cancel any pending request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+
         const formData = new FormData();
         formData.append('source', sourceFile);
         formData.append('target', targetFile);
-
 
         try {
             setIsLoading(true);
@@ -128,25 +131,38 @@ export default function Page() {
             const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
+                    'Authorization': `Bearer ${token}`,
                 },
-                body: formData
+                body: formData,
+                signal: abortControllerRef.current.signal
             });
             const data = await response.json();
 
             if (response.ok) {
-                setFeedbackMessage(data.message);  // Show success message or handle accordingly
-                setTaskId(data.task_id);  // Assume API returns a task_id
+                setFeedbackMessage(data.message);
+                setTaskId(data.task_id);
             } else {
                 throw new Error(data.message);
             }
 
         } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
             console.error('Error during face swap:', error);
             setFeedbackMessage('Failed to swap face.');
             setIsLoading(false);
         }
     };
+
+    // Cleanup abort controller on unmount
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     return (
         <>

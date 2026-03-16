@@ -1,13 +1,12 @@
 // dashboard/page.js
 "use client";
-import React, { useEffect, useState} from 'react';
-//import Navbar from "../components/Navbar";
-//import Footer from "../components/Footer";
+import React, { useEffect, useState, useCallback} from 'react';
 import {Card, CardHeader, CardBody, CardFooter, Image, Button} from "@nextui-org/react";
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react'
+import { Suspense } from 'react';
 import {Link} from "@nextui-org/react";
 import DashboardLayout from './DashboardLayout';
+import { tokenStorage } from '../../lib/auth/tokenStorage';
 export default function Dashboard() {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
     //const router = useRouter();
@@ -17,42 +16,40 @@ export default function Dashboard() {
     // Add state for video URLs
     const [videoUrls, setVideoUrls] = useState([]);
     const [loading, setLoading] = useState(false);
-    // Fetch task info when taskId is present
-    useEffect(() => {
+    const fetchTaskInfo = useCallback(async () => {
         if (!taskId) return;
         setLoading(true);
-        const token = localStorage.getItem('authToken');
-        fetch(`${apiUrl}/api/v1/tasks/${taskId}`, {
-            headers: {
-                'Authorization': `Token ${token}`
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                console.log("Backend response:", data);
-                // Check if valid data
-                if (data && data.data) {
-                    // Prefer original_videos, fall back to videos.
-                    let videoList = [];
-                    if (Array.isArray(data.data.original_videos) && data.data.original_videos.length > 0) {
-                        videoList = data.data.original_videos;
-                    } else if (Array.isArray(data.data.videos)) {
-                        videoList = data.data.videos;
-                    }
-                    setVideoUrls(videoList.map(
-                        p => p.startsWith('http') ? p : `${apiUrl}/api/v1/download/${p.replace(/^\/+/, '')}`
-                    ));
-                } else {
-                    setVideoUrls([]);
+        const token = tokenStorage.get();
+        try {
+            const res = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`, {
+                headers: {
+                    'Authorization': `Token ${token}`
                 }
-                setLoading(false);
-            })
-            .catch(err => {
-                setLoading(false);
-                setVideoUrls([]);
-                // Handle error as needed
             });
+            const data = await res.json();
+            if (data && data.data) {
+                let videoList = [];
+                if (Array.isArray(data.data.original_videos) && data.data.original_videos.length > 0) {
+                    videoList = data.data.original_videos;
+                } else if (Array.isArray(data.data.videos)) {
+                    videoList = data.data.videos;
+                }
+                setVideoUrls(videoList.map(
+                    p => p.startsWith('http') ? p : `${apiUrl}/api/v1/download/${p.replace(/^\/+/, '')}`
+                ));
+            } else {
+                setVideoUrls([]);
+            }
+        } catch {
+            setVideoUrls([]);
+        } finally {
+            setLoading(false);
+        }
     }, [taskId, apiUrl]);
+
+    useEffect(() => {
+        fetchTaskInfo();
+    }, [fetchTaskInfo]);
     // Use the first video as default
     const downloadUrl = videoUrls.length > 0 ? videoUrls[0] : "";
 
