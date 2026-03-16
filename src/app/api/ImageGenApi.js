@@ -8,14 +8,14 @@ const API_BASE_URL = `${backendUrl}/api`;
 class ImageGenApi {
     static async generateImage(prompt) {
         try {
-            // Call backend proxy endpoint
             const response = await authApi.post(`${API_BASE_URL}/generate-image/`, { query: prompt }, { headers: { 'Content-Type': 'application/json' } });
-            return response.data; // Axios already parsed JSON
+            return response.data;
         } catch (error) {
             console.error('Error generating image:', error);
             throw error;
         }
     }
+
     static async editImage(file, prompt) {
         try {
             const formData = new FormData();
@@ -23,13 +23,29 @@ class ImageGenApi {
             formData.append('prompt', prompt);
             const response = await authApi.post(`${API_BASE_URL}/edit-image/`, formData, {
                 responseType: 'blob',
-                //headers: { 'Content-Type': 'multipart/form-data' }
             });
-            // For image binary, axios keeps it in response.data as a Blob if we tell it to
             return response.data;
         } catch (error) {
             console.error('Error editing image:', error);
             throw error;
+        }
+    }
+
+    static async fetchImageWithProxy(imageUrl) {
+        try {
+            const proxyResponse = await fetch('/api/proxy-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl })
+            });
+
+            if (proxyResponse.ok) {
+                return await proxyResponse.blob();
+            }
+            throw new Error('Proxy fetch failed');
+        } catch (fetchError) {
+            console.warn('Failed to fetch image via proxy, trying direct URL:', fetchError);
+            return imageUrl;
         }
     }
 }

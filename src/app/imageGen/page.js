@@ -3,14 +3,15 @@ import React, { useEffect, useState } from 'react';
 import ImageGenLayout from './ImageGenLayout';
 import ImageGenApi from '../api/ImageGenApi';
 import { useAuth } from '../context/AuthContext';
-import { FaArrowUpFromBracket } from "react-icons/fa6";
+import { parseImageResponse } from '../../lib/utils/parseImageResponse';
+import GenerateTab from '../components/image/GenerateTab';
+import EditTab from '../components/image/EditTab';
 import {
     Button,
     Card,
     CardBody,
     Image,
     Link,
-    Textarea,
     Tabs,
     Tab,
     CircularProgress,
@@ -19,14 +20,10 @@ import toast from 'react-hot-toast';
 
 export default function Page() {
     const { isAuthenticated, setShowLoginModal } = useAuth();
-    const [mode, setMode] = useState('generate'); // 'generate' | 'edit'
-
-    // Prompt and file state
+    const [mode, setMode] = useState('generate');
     const [prompt, setPrompt] = useState('');
     const [file, setFile] = useState(null);
     const [filePreview, setFilePreview] = useState(null);
-
-    // Result/flow state
     const [isLoading, setIsLoading] = useState(false);
     const [statusText, setStatusText] = useState('');
     const [resultUrl, setResultUrl] = useState('');
@@ -47,6 +44,23 @@ export default function Page() {
         setFilePreview(null);
     };
 
+    const handleImageResult = async (imageUrl) => {
+        try {
+            const result = await ImageGenApi.fetchImageWithProxy(imageUrl);
+            if (result instanceof Blob) {
+                if (resultUrl && resultUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(resultUrl);
+                }
+                const objectUrl = URL.createObjectURL(result);
+                setResultUrl(objectUrl);
+            } else {
+                setResultUrl(result);
+            }
+        } catch {
+            setResultUrl(imageUrl);
+        }
+    };
+
     const submit = async () => {
         if (!prompt?.trim()) {
             toast.error('Please enter a prompt.');
@@ -57,7 +71,6 @@ export default function Page() {
             return;
         }
 
-        // Check authentication before processing
         if (!isAuthenticated) {
             setShowLoginModal(true);
             return;
@@ -68,86 +81,24 @@ export default function Page() {
             setStatusText('Processing...');
             setResultUrl('');
 
-            let result;
             if (mode === 'generate') {
-                result = await ImageGenApi.generateImage(prompt);
-
-                // Debug: log the actual response structure
-                console.log('Generate image response:', result);
-
-                // Handle JSON response for generate mode - check for various possible response formats
-                let imageUrl = null;
-                if (result?.image_url) {
-                    imageUrl = result.image_url;
-                } else if (result?.url) {
-                    imageUrl = result.url;
-                } else if (result?.result_url) {
-                    imageUrl = result.result_url;
-                } else if (result?.image) {
-                    imageUrl = result.image;
-                } else if (result?.data?.url) {
-                    imageUrl = result.data.url;
-                } else if (result?.data?.image_url) {
-                    imageUrl = result.data.image_url;
-                } else if (typeof result === 'string') {
-                    imageUrl = result;
-                }
+                const result = await ImageGenApi.generateImage(prompt);
+                const imageUrl = parseImageResponse(result);
 
                 if (imageUrl) {
-                    // Create a proxy fetch to bypass CORS issues
-                    try {
-                        // Use Next.js API route as proxy to fetch the image
-                        const proxyResponse = await fetch('/api/proxy-image', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ imageUrl })
-                        });
-                        
-                        if (proxyResponse.ok) {
-                            const imageBlob = await proxyResponse.blob();
-                            
-                            // Clean up previous object URL if it exists
-                            if (resultUrl && resultUrl.startsWith('blob:')) {
-                                URL.revokeObjectURL(resultUrl);
-                            }
-                            
-                            // Create object URL from blob
-                            const objectUrl = URL.createObjectURL(imageBlob);
-                            setResultUrl(objectUrl);
-                        } else {
-                            throw new Error('Proxy fetch failed');
-                        }
-                    } catch (fetchError) {
-                        console.warn('Failed to fetch image via proxy, trying direct fetch:', fetchError);
-                        
-                        // Fallback: try direct fetch with no-cors mode
-                        try {
-                            const directResponse = await fetch(imageUrl, { mode: 'no-cors' });
-                            // Note: no-cors mode doesn't allow reading response, so we fall back to direct URL
-                            setResultUrl(imageUrl);
-                        } catch (directError) {
-                            console.warn('Direct fetch also failed, using URL as-is:', directError);
-                            setResultUrl(imageUrl);
-                        }
-                    }
-                    
+                    await handleImageResult(imageUrl);
                     setStatusText('Completed successfully!');
                     toast.success('Image generated successfully!');
                 } else {
-                    console.error('Unexpected response structure:', result);
-                    throw new Error('No image URL returned from server. Response: ' + JSON.stringify(result));
+                    throw new Error('No image URL returned from server.');
                 }
             } else {
-                // Handle blob response for edit mode
-                result = await ImageGenApi.editImage(file, prompt);
+                const result = await ImageGenApi.editImage(file, prompt);
 
                 if (result instanceof Blob) {
-                    // Clean up previous object URL if it exists
                     if (resultUrl && resultUrl.startsWith('blob:')) {
                         URL.revokeObjectURL(resultUrl);
                     }
-
-                    // Create object URL from blob
                     const objectUrl = URL.createObjectURL(result);
                     setResultUrl(objectUrl);
                     setStatusText('Completed successfully!');
@@ -156,7 +107,6 @@ export default function Page() {
                     throw new Error('Invalid response format from server');
                 }
             }
-
         } catch (error) {
             console.error('Error:', error);
             setStatusText('Process failed.');
@@ -169,18 +119,14 @@ export default function Page() {
     const resetAll = () => {
         setPrompt('');
         if (mode === 'edit') onClearFile();
-
-        // Clean up object URL if it exists
         if (resultUrl && resultUrl.startsWith('blob:')) {
             URL.revokeObjectURL(resultUrl);
         }
-
         setResultUrl('');
         setStatusText('');
         setIsLoading(false);
     };
 
-    // Cleanup object URLs on unmount
     useEffect(() => {
         return () => {
             if (resultUrl && resultUrl.startsWith('blob:')) {
@@ -193,7 +139,6 @@ export default function Page() {
         <ImageGenLayout>
             <div className="flex justify-center items-center min-h-screen h-full">
                 <div className="w-4/5 bg-gray-900 p-0 rounded-lg shadow-lg grid grid-cols-1 md:grid-cols-2 gap-8 mt-0 md:mt-0 -mt-20">
-                    {/* Left: Controls */}
                     <Card className="border-none p-0 m-0" radius="lg">
                         <CardBody className="flex flex-col gap-5 p-5">
                             <Tabs
@@ -208,89 +153,34 @@ export default function Page() {
                                 <Tab key="edit" title="Edit Image" />
                             </Tabs>
 
-                            {mode === 'edit' && (
-                                <div className="flex flex-col items-center justify-center gap-4">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={onSelectFile}
-                                        style={{ display: 'none' }}
-                                        id="image-upload"
-                                    />
-
-                                    {filePreview ? (
-                                        <div className="flex items-center justify-center gap-4">
-                                            <Image
-                                                src={filePreview}
-                                                alt="Image to Edit"
-                                                className="cursor-pointer"
-                                                width={200}
-                                                height={200}
-                                                radius="lg"
-                                                onClick={() => document.getElementById('image-upload')?.click()}
-                                            />
-                                            <div className="flex flex-col gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    color="warning"
-                                                    variant="flat"
-                                                    onPress={() => document.getElementById('image-upload')?.click()}
-                                                >
-                                                    Change Image
-                                                </Button>
-                                                <Button size="sm" color="default" variant="light" onPress={onClearFile}>
-                                                    Clear
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div
-                                            className="w-full h-40 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-warning-400 transition-colors gap-3"
-                                            onClick={() => document.getElementById('image-upload')?.click()}
-                                        >
-                                            <FaArrowUpFromBracket className="text-2xl text-gray-400" />
-
-                                            <Button
-                                                size="sm"
-                                                color="warning"
-                                                variant="flat"
-                                                onPress={() => document.getElementById('image-upload')?.click()}
-                                            >
-                                                Upload Image
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
+                            {mode === 'generate' ? (
+                                <GenerateTab
+                                    prompt={prompt}
+                                    setPrompt={setPrompt}
+                                    onSubmit={submit}
+                                    isLoading={isLoading}
+                                />
+                            ) : (
+                                <EditTab
+                                    file={file}
+                                    filePreview={filePreview}
+                                    prompt={prompt}
+                                    setPrompt={setPrompt}
+                                    onSelectFile={onSelectFile}
+                                    onClearFile={onClearFile}
+                                    onSubmit={submit}
+                                    isLoading={isLoading}
+                                />
                             )}
 
-                            <Textarea
-                                label="Prompt"
-                                labelPlacement="outside"
-                                placeholder={
-                                    mode === 'generate'
-                                        ? 'Describe the image you want to generate...'
-                                        : 'Describe the changes you want to make...'
-                                }
-                                minRows={3}
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                variant="bordered"
-                                color="warning"
-                            />
-
-                            <div className="flex items-center justify-center gap-3">
-                                <Button
-                                    isDisabled={isLoading}
-                                    color="default"
-                                    variant="flat"
-                                    onPress={resetAll}
-                                >
-                                    Reset
-                                </Button>
-                                <Button color="warning" isLoading={isLoading} onPress={submit}>
-                                    {mode === 'generate' ? 'Generate Image' : 'Apply Edit'}
-                                </Button>
-                            </div>
+                            <Button
+                                isDisabled={isLoading}
+                                color="default"
+                                variant="flat"
+                                onPress={resetAll}
+                            >
+                                Reset
+                            </Button>
 
                             {isLoading && (
                                 <div className="flex items-center gap-3">
@@ -304,7 +194,6 @@ export default function Page() {
                         </CardBody>
                     </Card>
 
-                    {/* Right: Result */}
                     <Card className="border-none" radius="lg">
                         <CardBody className="flex flex-col items-center justify-center gap-4">
                             {resultUrl ? (
