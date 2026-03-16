@@ -1,11 +1,12 @@
 // faceSwap/page.js
 "use client";
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from "../context/AuthContext";
 import FaceSwapLayout from './FaceSwapLayout';
 import { tokenStorage } from '../../lib/auth/tokenStorage';
 import { FaceSwapCard, FACE_SWAP_CARDS } from '../components/FaceSwapCard';
 import { TARGET_FILES } from '../../lib/constants/faceSwap';
+import { useTaskPolling } from '../hooks/useTaskPolling';
 
 import {
     Button,
@@ -18,7 +19,6 @@ import {
     ModalFooter,
     CircularProgress
 } from "@nextui-org/react";
-import toast from "react-hot-toast";
 
 export default function FaceSwap() {
     const apiUrl = process.env.NEXT_PUBLIC_FACE_SWAP_API_URL;
@@ -26,44 +26,29 @@ export default function FaceSwap() {
     const [imageSrc, setImageSrc] = useState(null);
     const [activeCardKey, setActiveCardKey] = useState(null);
     const [file, setFile] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [taskId, setTaskId] = useState(null);
-    const [feedbackMessage, setFeedbackMessage] = useState("");
     const { isAuthenticated, setShowLoginModal } = useAuth();
-    const [downloadUrl, setDownloadUrl] = useState("");
-    const abortControllerRef = useRef(null);
 
-    const checkTaskStatus = useCallback(async () => {
-        try {
-            const response = await fetch(`${apiUrl}/task-status/${taskId}`);
-            const data = await response.json();
-            if (response.ok && data.status !== 'In progress' && data.status !== 'Failed') {
-                setIsLoading(false);
-                setFeedbackMessage('Process ' + data.status);
-                setDownloadUrl(`${apiUrl}/downloads/${taskId}/${TARGET_FILES[activeCardKey]}`);
-                setTaskId(null);
-            } else if (data.status === 'Failed') {
-                setIsLoading(false);
-                setFeedbackMessage('Process ' + data.status);
-                toast.error("Swap Failed! Please try again.");
-                setTaskId(null);
-            }
-        } catch (error) {
-            console.error('Error checking task status:', error);
-            setIsLoading(false);
-            toast.error("Swap Failed! Please try again.");
-        }
-    }, [apiUrl, taskId, activeCardKey]);
+    const getDownloadUrl = useCallback((tid) => {
+        return `${apiUrl}/downloads/${tid}/${TARGET_FILES[activeCardKey]}`;
+    }, [apiUrl, activeCardKey]);
 
-    useEffect(() => {
-        if (!taskId) return;
-
-        const interval = setInterval(() => {
-            checkTaskStatus();
-        }, 120000);
-
-        return () => clearInterval(interval);
-    }, [taskId, checkTaskStatus]);
+    const {
+        isLoading,
+        setIsLoading,
+        feedbackMessage,
+        setFeedbackMessage,
+        downloadUrl,
+        resetTask,
+        getAbortController
+    } = useTaskPolling({
+        apiUrl,
+        taskId,
+        onComplete: () => setTaskId(null),
+        onFailed: () => setTaskId(null),
+        pollInterval: 120000,
+        getDownloadUrl
+    });
 
     const toggleUploadModal = (key) => {
         if (!isAuthenticated) {
@@ -75,8 +60,7 @@ export default function FaceSwap() {
         if (!showUploadModal) {
             setImageSrc(null);
             setTaskId(null);
-            setFeedbackMessage("");
-            setDownloadUrl("");
+            resetTask();
         }
     };
 
@@ -105,11 +89,7 @@ export default function FaceSwap() {
             return;
         }
 
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        abortControllerRef.current = new AbortController();
-
+        const abortController = getAbortController();
         const formData = new FormData();
         formData.append('source', file);
 
@@ -123,7 +103,7 @@ export default function FaceSwap() {
                     'Authorization': `Bearer ${token}`,
                 },
                 body: formData,
-                signal: abortControllerRef.current.signal
+                signal: abortController.signal
             });
             const data = await response.json();
 
@@ -144,18 +124,10 @@ export default function FaceSwap() {
         }
     };
 
-    useEffect(() => {
-        return () => {
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-        };
-    }, []);
-
     const handleCloseModal = () => {
         setShowUploadModal(false);
         setImageSrc(null);
-        setFeedbackMessage("");
+        resetTask();
     };
 
     return (

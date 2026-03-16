@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { Link } from "@nextui-org/react";
 import DashboardLayout from './DashboardLayout';
-import { tokenStorage } from '../../lib/auth/tokenStorage';
+import videoApi from '../api/VideoApi';
 
 export default function Dashboard() {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
@@ -17,14 +17,9 @@ export default function Dashboard() {
     const fetchTaskInfo = useCallback(async () => {
         if (!taskId) return;
         setLoading(true);
-        const token = tokenStorage.get();
         try {
-            const res = await fetch(`${apiUrl}/api/v1/tasks/${taskId}`, {
-                headers: {
-                    'Authorization': `Token ${token}`
-                }
-            });
-            const data = await res.json();
+            const response = await videoApi.get(`/api/v1/tasks/${taskId}`);
+            const data = response.data;
             if (data && data.data) {
                 let videoList = [];
                 if (Array.isArray(data.data.original_videos) && data.data.original_videos.length > 0) {

@@ -1,9 +1,10 @@
 // photoFaceSwap/page.js
 "use client";
-import React, {Suspense, useEffect, useState, useCallback, useRef} from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from "../context/AuthContext";
 import PhotoFaceSwapLayout from './PhotoFaceSwapLayout';
 import { tokenStorage } from '../../lib/auth/tokenStorage';
+import { useTaskPolling } from '../hooks/useTaskPolling';
 
 import {Button, Card, CardBody,
     Image, Link,
@@ -12,63 +13,45 @@ import {Button, Card, CardBody,
     ModalBody,
     CircularProgress
 } from "@nextui-org/react";
-import toast from "react-hot-toast";
 
 export default function Page() {
     const apiUrl = process.env.NEXT_PUBLIC_FACE_SWAP_API_URL;
     const backdrop = "blur";
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [imageSrc, setImageSrc] = useState(null);
-    //const [activeCardKey, setActiveCardKey] = useState(null);
-    const [file, setFile] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [taskId, setTaskId] = useState(null);
-    const [feedbackMessage, setFeedbackMessage] = useState("");
     const { isAuthenticated, setShowLoginModal } = useAuth();
-    const [downloadUrl, setDownloadUrl] = useState("");
-    const [sourceImage, setSourceImage] = useState('/images/andy_lau.png');  // Default source image
-    const [targetImage, setTargetImage] = useState('/images/Scarlett_Johansson.png');  // Default target image
+    const [sourceImage, setSourceImage] = useState('/images/andy_lau.png');
+    const [targetImage, setTargetImage] = useState('/images/Scarlett_Johansson.png');
     const [sourceFile, setSourceFile] = useState(null);
     const [targetFile, setTargetFile] = useState(null);
-    const abortControllerRef = useRef(null);
 
-    const checkTaskStatus = useCallback(async () => {
-        try {
-            const response = await fetch(`${apiUrl}/task-status/${taskId}`);
-            const data = await response.json();
-            if (response.ok && data.status !== 'In progress' && data.status !== 'Failed') {
-                setIsLoading(false);
-                setFeedbackMessage('Process ' + data.status);
-                setDownloadUrl(`${apiUrl}/downloads/${taskId}/${targetFile?.name || 'result'}`);
-                setTaskId(null);
-            } else if (data.status === 'Failed') {
-                setIsLoading(false);
-                setFeedbackMessage('Process ' + data.status);
-                toast.error("Swap Failed! Please try again.");
-                setTaskId(null);
-            }
-        } catch (error) {
-            console.error('Error checking task status:', error);
-            setIsLoading(false);
-            toast.error("Swap Failed! Please try again.");
-        }
-    }, [apiUrl, taskId, targetFile]);
+    const getDownloadUrl = useCallback((tid) => {
+        return `${apiUrl}/downloads/${tid}/${targetFile?.name || 'result'}`;
+    }, [apiUrl, targetFile]);
 
-    useEffect(() => {
-        if (!taskId) return;
-
-        const interval = setInterval(() => {
-            checkTaskStatus();
-        }, 120000);
-
-        return () => clearInterval(interval);
-    }, [taskId, checkTaskStatus]);
+    const {
+        isLoading,
+        setIsLoading,
+        feedbackMessage,
+        setFeedbackMessage,
+        downloadUrl,
+        resetTask,
+        getAbortController
+    } = useTaskPolling({
+        apiUrl,
+        taskId,
+        onComplete: () => setTaskId(null),
+        onFailed: () => setTaskId(null),
+        pollInterval: 120000,
+        getDownloadUrl
+    });
     const toggleUploadModal = () => {
-        setShowUploadModal(!showUploadModal); // Toggle the state to show or hide the modal
+        setShowUploadModal(!showUploadModal);
         if (!showUploadModal) {
-            setImageSrc(null);  // Clear the image source when closing the modal
+            setImageSrc(null);
             setTaskId(null);
-            setFeedbackMessage("");
+            resetTask();
         }
     };
 
@@ -114,12 +97,7 @@ export default function Page() {
             return;
         }
 
-        // Cancel any pending request
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        abortControllerRef.current = new AbortController();
-
+        const abortController = getAbortController();
         const formData = new FormData();
         formData.append('source', sourceFile);
         formData.append('target', targetFile);
@@ -134,7 +112,7 @@ export default function Page() {
                     'Authorization': `Bearer ${token}`,
                 },
                 body: formData,
-                signal: abortControllerRef.current.signal
+                signal: abortController.signal
             });
             const data = await response.json();
 
@@ -154,15 +132,6 @@ export default function Page() {
             setIsLoading(false);
         }
     };
-
-    // Cleanup abort controller on unmount
-    useEffect(() => {
-        return () => {
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-        };
-    }, []);
 
     return (
         <>
