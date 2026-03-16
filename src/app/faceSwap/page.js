@@ -1,23 +1,27 @@
 // faceSwap/page.js
 "use client";
-import React, {Suspense, useEffect, useState, useCallback, useRef} from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from "../context/AuthContext";
 import FaceSwapLayout from './FaceSwapLayout';
 import { tokenStorage } from '../../lib/auth/tokenStorage';
+import { FaceSwapCard, FACE_SWAP_CARDS } from '../components/FaceSwapCard';
+import { TARGET_FILES } from '../../lib/constants/faceSwap';
 
-import {Button, Card, CardBody, CardFooter, CardHeader,
-    Image, Link,
+import {
+    Button,
+    Image,
+    Link,
     Modal,
     ModalContent,
     ModalHeader,
     ModalBody,
-    ModalFooter, CircularProgress
+    ModalFooter,
+    CircularProgress
 } from "@nextui-org/react";
 import toast from "react-hot-toast";
 
 export default function FaceSwap() {
     const apiUrl = process.env.NEXT_PUBLIC_FACE_SWAP_API_URL;
-    const backdrop = "blur";
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [imageSrc, setImageSrc] = useState(null);
     const [activeCardKey, setActiveCardKey] = useState(null);
@@ -28,12 +32,6 @@ export default function FaceSwap() {
     const { isAuthenticated, setShowLoginModal } = useAuth();
     const [downloadUrl, setDownloadUrl] = useState("");
     const abortControllerRef = useRef(null);
-    const target_files = {
-        '1': 'gatsby_short.mp4',
-        '2': 'ironman.mp4',
-        '3': 'zhenhuan.mp4',
-        '4': 'Chowyunfat_A_better_tomorrow.mp4',
-    };
 
     const checkTaskStatus = useCallback(async () => {
         try {
@@ -42,7 +40,7 @@ export default function FaceSwap() {
             if (response.ok && data.status !== 'In progress' && data.status !== 'Failed') {
                 setIsLoading(false);
                 setFeedbackMessage('Process ' + data.status);
-                setDownloadUrl(`${apiUrl}/downloads/${taskId}/${target_files[activeCardKey]}`);
+                setDownloadUrl(`${apiUrl}/downloads/${taskId}/${TARGET_FILES[activeCardKey]}`);
                 setTaskId(null);
             } else if (data.status === 'Failed') {
                 setIsLoading(false);
@@ -55,7 +53,7 @@ export default function FaceSwap() {
             setIsLoading(false);
             toast.error("Swap Failed! Please try again.");
         }
-    }, [apiUrl, taskId, activeCardKey, target_files]);
+    }, [apiUrl, taskId, activeCardKey]);
 
     useEffect(() => {
         if (!taskId) return;
@@ -66,29 +64,31 @@ export default function FaceSwap() {
 
         return () => clearInterval(interval);
     }, [taskId, checkTaskStatus]);
+
     const toggleUploadModal = (key) => {
         if (!isAuthenticated) {
-            setShowLoginModal(true); // Trigger login modal if not authenticated
-            return; // Stop the function from proceeding further
+            setShowLoginModal(true);
+            return;
         }
         setActiveCardKey(key);
-        setShowUploadModal(!showUploadModal); // Toggle the state to show or hide the modal
+        setShowUploadModal(!showUploadModal);
         if (!showUploadModal) {
-            setImageSrc(null);  // Clear the image source when closing the modal
+            setImageSrc(null);
             setTaskId(null);
             setFeedbackMessage("");
+            setDownloadUrl("");
         }
     };
 
     const handleImageChange = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            setFile(file);  // Save the selected file into the state
+        const selectedFile = event.target.files[0];
+        if (selectedFile) {
+            setFile(selectedFile);
             const reader = new FileReader();
             reader.onload = (e) => {
-                setImageSrc(e.target.result); // Set the image source to the data URL
+                setImageSrc(e.target.result);
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(selectedFile);
         }
     };
 
@@ -105,7 +105,6 @@ export default function FaceSwap() {
             return;
         }
 
-        // Cancel any pending request
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
@@ -137,7 +136,7 @@ export default function FaceSwap() {
 
         } catch (error) {
             if (error.name === 'AbortError') {
-                return; // Request was cancelled, don't show error
+                return;
             }
             console.error('Error during face swap:', error);
             setFeedbackMessage('Failed to swap face.');
@@ -145,7 +144,6 @@ export default function FaceSwap() {
         }
     };
 
-    // Cleanup abort controller on unmount
     useEffect(() => {
         return () => {
             if (abortControllerRef.current) {
@@ -154,229 +152,106 @@ export default function FaceSwap() {
         };
     }, []);
 
+    const handleCloseModal = () => {
+        setShowUploadModal(false);
+        setImageSrc(null);
+        setFeedbackMessage("");
+    };
+
     return (
-        <>
-            <FaceSwapLayout>
-                <div className="mt-12 mx-auto px-8 pb-8 grid grid-cols-2 md:grid-cols-3 gap-8">
+        <FaceSwapLayout>
+            <div className="mt-12 mx-auto px-8 pb-8 grid grid-cols-2 md:grid-cols-3 gap-8">
+                {FACE_SWAP_CARDS.map((card) => (
+                    <FaceSwapCard
+                        key={card.key}
+                        cardKey={card.key}
+                        title={card.title}
+                        subtitle={card.subtitle}
+                        videoSrc={card.videoSrc}
+                        videoTitle={card.videoTitle}
+                        onSwapClick={toggleUploadModal}
+                    />
+                ))}
+            </div>
 
-                    <Card key={1} isHoverable isPressable isFooterBlurred className="max-w-xl mx-auto border-none">
-                            <CardHeader className="flex-col">
-                                <p className="text-tiny text-white/60 uppercase font-bold">The Great Gatsby</p>
-                                <h4 className="text-white/90 font-medium text-xl">Leonardo Dicaprio</h4>
-                            </CardHeader>
-                            <Suspense fallback={<div>Loading...</div>}>
-                                <CardBody>
-                                    <iframe
-                                        className="w-full h-full"  // Ensures the iframe fills the container
-                                        src="https://player.bilibili.com/player.html?aid=1104352221&bvid=BV1Yw4m197RP&cid=1541084995&p=1&autoplay=0"
-                                        title="Leonardo Dicaprio - The Great Gatsby"
-                                        frameBorder="0"
-                                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                    ></iframe>
-                                </CardBody>
-                            </Suspense>
-                            <CardFooter className="absolute bg-black/40 bottom-0 z-10 border-t-1 border-default-600 dark:border-default-100">
-                                <div className="flex flex-grow gap-2 items-center">
-                                    <Image
-                                        alt="Breathing app icon"
-                                        className="rounded-full w-10 h-11 bg-black"
-                                        src="/images/breathing-app-icon.jpeg"
-                                    />
-                                    <div className="flex flex-col">
-                                        <p className="text-tiny text-white/60"></p>
-                                        <p className="text-tiny text-white/60"></p>
-                                    </div>
-                                </div>
-                                <Button color="danger" variant="bordered"
-                                        showAnchorIcon as={Link} radius="full"
-                                        size="sm" onPress={() =>toggleUploadModal(1)}>
-                                    Face Swap
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    <Card key={2} isHoverable isPressable isFooterBlurred className="max-w-xl mx-auto border-none">
-                        <CardHeader className="flex-col">
-                            <p className="text-tiny text-white/60 uppercase font-bold">Robert Downey Jr</p>
-                            <h4 className="text-white/90 font-medium text-xl">Iron Man</h4>
-                        </CardHeader>
-                        <Suspense fallback={<div>Loading...</div>}>
-                            <CardBody>
-                                <iframe
-                                    className="w-full h-full"  // Ensures the iframe fills the container
-                                    src="https://player.bilibili.com/player.html?bvid=BV1gm421u753&cid=1541078218&page=1&autoplay=0"
-                                    title="Robert Downey Jr - Iron Man"
-                                    frameBorder="0"
-                                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                ></iframe>
-                            </CardBody>
-                        </Suspense>
-                        <CardFooter className="absolute bg-black/40 bottom-0 z-10 border-t-1 border-default-600 dark:border-default-100">
-                            <div className="flex flex-grow gap-2 items-center">
-                                <Image
-                                    alt="Breathing app icon"
-                                    className="rounded-full w-10 h-11 bg-black"
-                                    src="/images/breathing-app-icon.jpeg"
-                                />
-                                <div className="flex flex-col">
-                                    <p className="text-tiny text-white/60"></p>
-                                    <p className="text-tiny text-white/60"></p>
-                                </div>
+            <Modal
+                backdrop="blur"
+                isOpen={showUploadModal}
+                onClose={handleCloseModal}
+                placement="top-center"
+                motionProps={{
+                    variants: {
+                        enter: {
+                            y: 0,
+                            opacity: 1,
+                            transition: { duration: 0.3, ease: "easeOut" },
+                        },
+                        exit: {
+                            y: -20,
+                            opacity: 0,
+                            transition: { duration: 0.2, ease: "easeIn" },
+                        },
+                    }
+                }}
+            >
+                <ModalContent>
+                    <ModalHeader className="flex flex-col gap-1">Upload</ModalHeader>
+                    <ModalBody>
+                        <p className="mb-4 text-gray-600">
+                            Please upload a photo that you would like to use for the face swap.
+                        </p>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-violet-50 file:text-violet-700
+                                hover:file:bg-violet-100"
+                        />
+                        {imageSrc && (
+                            <div className="mt-4">
+                                <Image src={imageSrc} alt="Uploaded Image Preview" isBlurred />
                             </div>
-                            <Button color="danger" variant="bordered"
-                                    showAnchorIcon as={Link} radius="full"
-                                    size="sm" onPress={() =>toggleUploadModal(2)}>
-                                Face Swap
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                    <Card key={3} isHoverable isPressable isFooterBlurred className="max-w-xl mx-auto border-none">
-                        <CardHeader className="flex-col">
-                            <p className="text-tiny text-white/60 uppercase font-bold">Zhen Huan</p>
-                            <h4 className="text-white/90 font-medium text-xl">Sun Li</h4>
-                        </CardHeader>
-                        <Suspense fallback={<div>Loading...</div>}>
-                            <CardBody>
-                                <iframe
-                                    className="w-full h-full"  // Ensures the iframe fills the container
-                                    src="https://player.bilibili.com/player.html?aid=1604300326&bvid=BV1Jm421p7g8&cid=1541089940&p=1&autoplay=0"
-                                    title="Sun Li - Zhen Huan"
-                                    frameBorder="0"
-                                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                ></iframe>
-                            </CardBody>
-                        </Suspense>
-                        <CardFooter className="absolute bg-black/40 bottom-0 z-10 border-t-1 border-default-600 dark:border-default-100">
-                            <div className="flex flex-grow gap-2 items-center">
-                                <Image
-                                    alt="Breathing app icon"
-                                    className="rounded-full w-10 h-11 bg-black"
-                                    src="/images/breathing-app-icon.jpeg"
+                        )}
+                        <div className="mt-4 justify-center">
+                            {isLoading && (
+                                <CircularProgress
+                                    className="justify-center"
+                                    color="danger"
+                                    label="Loading..."
+                                    size="md"
                                 />
-                                <div className="flex flex-col">
-                                    <p className="text-tiny text-white/60"></p>
-                                    <p className="text-tiny text-white/60"></p>
-                                </div>
-                            </div>
-                            <Button color="danger" variant="bordered"
-                                    showAnchorIcon as={Link} radius="full"
-                                    size="sm" onPress={() =>toggleUploadModal(3)}>
-                                Face Swap
+                            )}
+                        </div>
+                        {feedbackMessage && <p>{feedbackMessage}</p>}
+                        {downloadUrl && (
+                            <Link
+                                isBlock
+                                showAnchorIcon
+                                color="success"
+                                href={downloadUrl}
+                                target="_blank"
+                                onPress={handleCloseModal}
+                            >
+                                Download the video
+                            </Link>
+                        )}
+                    </ModalBody>
+                    <ModalFooter className="justify-between">
+                        <Button color="danger" onPress={handleCloseModal}>
+                            Close
+                        </Button>
+                        {!isLoading && (
+                            <Button color="warning" onPress={performSwap}>
+                                Swap Now
                             </Button>
-                        </CardFooter>
-                    </Card>
-                    <Card key={4} isHoverable isPressable isFooterBlurred className="max-w-xl mx-auto border-none">
-                        <CardHeader className="flex-col">
-                            <p className="text-tiny text-white/60 uppercase font-bold">A Better Tomorrow</p>
-                            <h4 className="text-white/90 font-medium text-xl">Chow Yun Fat</h4>
-                        </CardHeader>
-                        <Suspense fallback={<div>Loading...</div>}>
-                            <CardBody>
-                                <iframe
-                                    className="w-full h-full"  // Ensures the iframe fills the container
-                                    src="https://player.bilibili.com/player.html?aid=1004425596&bvid=BV1Hx4y1i7dL&cid=1541084810&p=1&autoplay=0"
-                                    title="Chow Yun Fat - A Better Tomorrow"
-                                    frameBorder="0"
-                                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                ></iframe>
-                            </CardBody>
-                        </Suspense>
-                        <CardFooter className="absolute bg-black/40 bottom-0 z-10 border-t-1 border-default-600 dark:border-default-100">
-                            <div className="flex flex-grow gap-2 items-center">
-                                <Image
-                                    alt="Breathing app icon"
-                                    className="rounded-full w-10 h-11 bg-black"
-                                    src="/images/breathing-app-icon.jpeg"
-                                />
-                                <div className="flex flex-col">
-                                    <p className="text-tiny text-white/60"></p>
-                                    <p className="text-tiny text-white/60"></p>
-                                </div>
-                            </div>
-                            <Button color="danger" variant="bordered"
-                                    showAnchorIcon as={Link} radius="full"
-                                    size="sm" onPress={() =>toggleUploadModal(4)}>
-                                Face Swap
-                            </Button>
-                        </CardFooter>
-                    </Card>
-
-
-
-                </div>
-
-                {/* Modal Popup*/}
-                <Modal
-                    backdrop={backdrop}
-                    isOpen={showUploadModal}
-                    onClose={() => setShowUploadModal(false)}
-                    placement="top-center"
-                    motionProps={{
-                        variants: {
-                            enter: {
-                                y: 0,
-                                opacity: 1,
-                                transition: {
-                                    duration: 0.3,
-                                    ease: "easeOut",
-                                },
-                            },
-                            exit: {
-                                y: -20,
-                                opacity: 0,
-                                transition: {
-                                    duration: 0.2,
-                                    ease: "easeIn",
-                                },
-                            },
-                        }
-                    }}
-                >
-                    <ModalContent>
-                                <ModalHeader className="flex flex-col gap-1">Upload</ModalHeader>
-                                <ModalBody>
-                                    <p className="mb-4 text-gray-600">Please upload a photo that you would like to use for the face swap.</p>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="block w-full text-sm text-gray-500
-                                       file:mr-4 file:py-2 file:px-4
-                                       file:rounded-full file:border-0
-                                       file:text-sm file:font-semibold
-                                       file:bg-violet-50 file:text-violet-700
-                                       hover:file:bg-violet-100"
-                                    />
-                                    {imageSrc && (
-                                        <div className="mt-4">
-                                            <Image src={imageSrc} alt="Uploaded Image Preview" isBlurred />
-                                        </div>
-                                    )}
-                                    <div className="mt-4 justify-center">
-                                    {isLoading && <CircularProgress className="justify-center" color="danger" label="Loading..." size="md" />}
-                                    </div>
-                                    {feedbackMessage && <p>{feedbackMessage}</p>}
-                                    {downloadUrl && <Link isBlock showAnchorIcon color="success" href={downloadUrl} target="_blank" onPress={() => { setShowUploadModal(false)}}>Download the video</Link>}
-                                </ModalBody>
-                                <ModalFooter className="justify-between">
-                                    <Button color="danger" onPress={() => { setShowUploadModal(false);
-                                        setImageSrc(null);
-                                        setFeedbackMessage("");
-                                    }}>
-                                        Close
-                                    </Button>
-                                    {!isLoading && <Button color="warning" onPress={performSwap}>
-                                        Swap Now
-                                    </Button>}
-                                </ModalFooter>
-                    </ModalContent>
-                </Modal>
-            </FaceSwapLayout>
-
-        </>
-    )
-
+                        )}
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+        </FaceSwapLayout>
+    );
 }
