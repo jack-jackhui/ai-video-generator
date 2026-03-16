@@ -7,9 +7,9 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '**.md'
-      - '.changeset/**'
-  workflow_dispatch:  # Allow manual trigger
+      - "**.md"
+      - ".changeset/**"
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -37,8 +37,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Extract metadata for Docker
         id: meta
@@ -68,8 +68,8 @@ jobs:
 
       - name: Output image info
         run: |
-          echo Image pushed: ${{ steps.meta.outputs.tags }}
-          echo Digest: ${{ steps.build.outputs.digest }}
+          echo "Image pushed: ${{ steps.meta.outputs.tags }}"
+          echo "Digest: ${{ steps.build.outputs.digest }}"
 
   deploy:
     needs: build-and-push
@@ -85,13 +85,13 @@ jobs:
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
           script: |
             cd ~/ai-video
-            echo Pulling latest frontend image...
+            echo "Pulling latest frontend image..."
             docker compose pull frontend
-            echo Restarting frontend container...
+            echo "Restarting frontend container..."
             docker compose up -d frontend
-            echo Cleaning up old images...
+            echo "Cleaning up old images..."
             docker image prune -f
-            echo Deployment complete!
+            echo "Deployment complete!"
             docker ps | grep ai_video_frontend
 
       - name: Verify deployment
@@ -101,14 +101,12 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
           script: |
-            # Wait for container to be healthy
             sleep 10
-            # Check if container is running
             if docker ps | grep -q ai_video_frontend; then
-              echo ✅ Frontend container is running
+              echo "✅ Frontend container is running"
               docker logs ai_video_frontend --tail 20
             else
-              echo ❌ Frontend container failed to start
+              echo "❌ Frontend container failed to start"
               docker logs ai_video_frontend --tail 50
               exit 1
             fi
