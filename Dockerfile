@@ -6,14 +6,9 @@ WORKDIR /ai_video_frontend
 
 # Step 3: Copy package.json and package-lock.json
 COPY package*.json ./
-#COPY tailwind.config.js ./
-#COPY jsconfig.json ./
-#COPY next.config.mjs ./
-#COPY postcss.config.js ./
-#COPY .eslintrc.json ./
-# Step 4: Install dependencies
-RUN npm install
-#RUN npm list
+
+# Step 4: Configure npm for better network reliability and install dependencies
+RUN npm config set fetch-retries 5 &&     npm config set fetch-retry-mintimeout 20000 &&     npm config set fetch-retry-maxtimeout 120000 &&     npm install
 
 # Step 5: Copy the rest of your client-side code into the container
 COPY . .
