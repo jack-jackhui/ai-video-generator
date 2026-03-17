@@ -80,14 +80,23 @@ export default function Navbar() {
                                 AI Image Generation
                             </Button>
                         </DropdownTrigger>
-                        <DropdownMenu aria-label="FaceSwap features" className="w-[340px]" itemClasses={{ base: "gap-1" }}>
-                            <DropdownItem key="AiImageGen" startContent={icons.flash} href="/imageGen">
+                        <DropdownMenu 
+                            aria-label="FaceSwap features" 
+                            className="w-[340px]" 
+                            itemClasses={{ base: "gap-1" }}
+                            onAction={(key) => {
+                                if (key === "AiImageGen") router.push("/imageGen");
+                                if (key === "VideoFaceSwap") router.push("/faceSwap");
+                                if (key === "PhotoFaceSwap") router.push("/photoFaceSwap");
+                            }}
+                        >
+                            <DropdownItem key="AiImageGen" startContent={icons.flash}>
                                 AI Image Generation / Editing
                             </DropdownItem>
-                            <DropdownItem key="VideoFaceSwap" startContent={icons.user} href="/faceSwap">
+                            <DropdownItem key="VideoFaceSwap" startContent={icons.user}>
                                 Video Face Swap
                             </DropdownItem>
-                            <DropdownItem key="PhotoFaceSwap" startContent={icons.activity} href="/photoFaceSwap">
+                            <DropdownItem key="PhotoFaceSwap" startContent={icons.activity}>
                                 Photo Face Swap
                             </DropdownItem>
                         </DropdownMenu>
@@ -129,14 +138,24 @@ export default function Navbar() {
                                 AI Image Generation
                             </Button>
                         </DropdownTrigger>
-                        <DropdownMenu aria-label="FaceSwap features" className="w-[340px]" itemClasses={{ base: "gap-1" }}>
-                            <DropdownItem key="AIImageGeneration" startContent={icons.user} href="/imageGen">
+                        <DropdownMenu 
+                            aria-label="FaceSwap features" 
+                            className="w-[340px]" 
+                            itemClasses={{ base: "gap-1" }}
+                            onAction={(key) => {
+                                setMobileMenuOpen(false);
+                                if (key === "AIImageGeneration") router.push("/imageGen");
+                                if (key === "VideoFaceSwap") router.push("/faceSwap");
+                                if (key === "PhotoFaceSwap") router.push("/photoFaceSwap");
+                            }}
+                        >
+                            <DropdownItem key="AIImageGeneration" startContent={icons.user}>
                                 AI Image Generation
                             </DropdownItem>
-                            <DropdownItem key="VideoFaceSwap" startContent={icons.user} href="/faceSwap">
+                            <DropdownItem key="VideoFaceSwap" startContent={icons.user}>
                                 Video Face Swap
                             </DropdownItem>
-                            <DropdownItem key="PhotoFaceSwap" startContent={icons.activity} href="/photoFaceSwap">
+                            <DropdownItem key="PhotoFaceSwap" startContent={icons.activity}>
                                 Photo Face Swap
                             </DropdownItem>
                         </DropdownMenu>
