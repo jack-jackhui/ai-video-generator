@@ -65,10 +65,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NEXT_PUBLIC_MICROSOFT_REDIRECT_URL=${{ secrets.NEXT_PUBLIC_MICROSOFT_REDIRECT_URL }}
+            NEXT_PUBLIC_BACKEND_URL=${{ secrets.NEXT_PUBLIC_BACKEND_URL }}
+            NEXT_PUBLIC_VIDEO_GEN_API_URL=${{ secrets.NEXT_PUBLIC_VIDEO_GEN_API_URL }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+            NEXT_PUBLIC_GOOGLE_REDIRECT_URL=${{ secrets.NEXT_PUBLIC_GOOGLE_REDIRECT_URL }}
             NEXT_PUBLIC_MICROSOFT_CLIENT_ID=${{ secrets.NEXT_PUBLIC_MICROSOFT_CLIENT_ID }}
+            NEXT_PUBLIC_MICROSOFT_REDIRECT_URL=${{ secrets.NEXT_PUBLIC_MICROSOFT_REDIRECT_URL }}
             NEXT_PUBLIC_GITHUB_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GITHUB_CLIENT_ID }}
             NEXT_PUBLIC_GITHUB_REDIRECT_URL=${{ secrets.NEXT_PUBLIC_GITHUB_REDIRECT_URL }}
+            NEXT_PUBLIC_CHATBOT_URL=${{ secrets.NEXT_PUBLIC_CHATBOT_URL }}
+            NEXT_PUBLIC_MYNOTEBOOKLM_URL=${{ secrets.NEXT_PUBLIC_MYNOTEBOOKLM_URL }}
 
       - name: Output image info
         run: |
