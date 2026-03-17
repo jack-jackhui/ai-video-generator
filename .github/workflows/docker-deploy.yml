@@ -120,3 +120,42 @@ jobs:
               docker logs ai_video_frontend --tail 50
               exit 1
             fi
+
+  notify-success:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Send Telegram notification (Success)
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            ✅ <b>AI Video Frontend Deployed</b>
+            
+            📦 Commit: <code>${{ github.sha }}</code>
+            📝 ${{ github.event.head_commit.message }}
+            👤 Author: ${{ github.actor }}
+            🔗 <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Run</a>
+            🌐 <a href="https://ai-video.jackhui.com.au">ai-video.jackhui.com.au</a>
+
+  notify-failure:
+    needs: [build-and-push, deploy]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Send Telegram notification (Failure)
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            ❌ <b>AI Video Frontend Deploy Failed</b>
+            
+            📦 Commit: <code>${{ github.sha }}</code>
+            📝 ${{ github.event.head_commit.message }}
+            👤 Author: ${{ github.actor }}
+            🔗 <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Run</a>
