@@ -7,14 +7,11 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import { useVideoGenForm } from '../hooks/useVideoGenForm';
-import VideoEngineSelector from './video/VideoEngineSelector';
 import DefaultVideoForm from './video/DefaultVideoForm';
-import SoraVideoForm from './video/SoraVideoForm';
 import BackgroundVideoCarousel from './video/BackgroundVideoCarousel';
 import { VideoProcessingModal } from './ProcessingModal';
 
 const VideoGeneratorPage = () => {
-    const [backendOption, setBackendOption] = useState('default');
     const { isAuthenticated, setShowLoginModal } = useAuth();
     const router = useRouter();
     const [visible, setVisible] = useState(false);
@@ -46,14 +43,12 @@ const VideoGeneratorPage = () => {
     } = useVideoGenForm();
 
     const handleSubmit = useDebouncedCallback(async () => {
-        if (!validateForm(backendOption)) return;
+        if (!validateForm()) return;
 
-        if (backendOption === "default") {
-            if (Array.isArray(videoTerms) && videoTerms.length === 0) {
-                await generateVideoKeywords();
-            } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
-                await generateVideoKeywords();
-            }
+        if (Array.isArray(videoTerms) && videoTerms.length === 0) {
+            await generateVideoKeywords();
+        } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
+            await generateVideoKeywords();
         }
 
         if (!isAuthenticated) {
@@ -66,7 +61,7 @@ const VideoGeneratorPage = () => {
 
         try {
             const endpoint = '/api/v1/videos';
-            const response = await videoApi.post(endpoint, getFormData(backendOption));
+            const response = await videoApi.post(endpoint, getFormData());
             const result = response.data;
             if (response.status === 200) {
                 setTaskId(result.data.task_id);
@@ -184,49 +179,29 @@ const VideoGeneratorPage = () => {
                                 <h3 className="text-center text-2xl md:text-3xl font-bold w-full">
                                     AI Video Generator
                                 </h3>
-                                <VideoEngineSelector
-                                    value={backendOption}
-                                    onChange={setBackendOption}
+
+                                <DefaultVideoForm
+                                    videoSubject={videoSubject}
+                                    videoScript={videoScript}
+                                    videoTerms={videoTerms}
+                                    aspectRatio={aspectRatio}
+                                    audio={audio}
+                                    subtitleFont={subtitleFont}
+                                    soundEffects={soundEffects}
+                                    isInvalid={isInvalid}
+                                    errors={errors}
+                                    isSubmitting={isSubmitting}
+                                    taskCompleted={taskCompleted}
+                                    isScriptGenerating={isScriptGenerating}
+                                    onVideoSubjectChange={handleChange}
+                                    onAspectRatioChange={setAspectRatio}
+                                    onAudioChange={setAudio}
+                                    onSubtitleFontChange={setSubtitleFont}
+                                    onSoundEffectsChange={setSoundEffects}
+                                    onGenerateScript={generateVideoScript}
+                                    onGenerateKeywords={generateVideoKeywords}
+                                    onSubmit={handleSubmit}
                                 />
-
-                                {backendOption === "sora" && (
-                                    <SoraVideoForm
-                                        videoSubject={videoSubject}
-                                        aspectRatio={aspectRatio}
-                                        isInvalid={isInvalid}
-                                        errors={errors}
-                                        isSubmitting={isSubmitting}
-                                        taskCompleted={taskCompleted}
-                                        onVideoSubjectChange={handleChange}
-                                        onAspectRatioChange={setAspectRatio}
-                                        onSubmit={handleSubmit}
-                                    />
-                                )}
-
-                                {backendOption === "default" && (
-                                    <DefaultVideoForm
-                                        videoSubject={videoSubject}
-                                        videoScript={videoScript}
-                                        videoTerms={videoTerms}
-                                        aspectRatio={aspectRatio}
-                                        audio={audio}
-                                        subtitleFont={subtitleFont}
-                                        soundEffects={soundEffects}
-                                        isInvalid={isInvalid}
-                                        errors={errors}
-                                        isSubmitting={isSubmitting}
-                                        taskCompleted={taskCompleted}
-                                        isScriptGenerating={isScriptGenerating}
-                                        onVideoSubjectChange={handleChange}
-                                        onAspectRatioChange={setAspectRatio}
-                                        onAudioChange={setAudio}
-                                        onSubtitleFontChange={setSubtitleFont}
-                                        onSoundEffectsChange={setSoundEffects}
-                                        onGenerateScript={generateVideoScript}
-                                        onGenerateKeywords={generateVideoKeywords}
-                                        onSubmit={handleSubmit}
-                                    />
-                                )}
                             </div>
                         </CardBody>
                     </Card>

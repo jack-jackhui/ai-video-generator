@@ -57,13 +57,13 @@ export function useVideoGenForm() {
         }
     };
 
-    const validateForm = (backendOption) => {
+    const validateForm = () => {
         if (!videoSubject.trim()) {
             toast.error("Please enter a video subject/description.");
             return false;
         }
 
-        if (backendOption === "default" && !audio.value) {
+        if (!audio.value) {
             toast.error("Please select an audio option.");
             return false;
         }
@@ -71,12 +71,12 @@ export function useVideoGenForm() {
         return true;
     };
 
-    const getFormData = (backendOption) => ({
+    const getFormData = () => ({
         video_subject: videoSubject,
         video_script: videoScript,
         video_terms: videoTerms,
         video_aspect: aspectRatio.value,
-        video_source: backendOption === "sora" ? "sora" : "default",
+        video_source: "default",
         video_clip_duration: 5,
         video_count: 1,
         video_language: "",
