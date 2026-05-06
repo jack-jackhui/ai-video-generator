@@ -1,5 +1,5 @@
 # Step 1: Base image
-FROM node:21.6.1-alpine
+FROM node:20-alpine
 
 # Step 2: Set the working directory in the container
 WORKDIR /ai_video_frontend
@@ -9,9 +9,10 @@ COPY package*.json ./
 
 # Step 4: Configure npm for better network reliability and install dependencies
 RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-factor 2 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
-    npm install
+    npm ci --prefer-offline --no-audit --no-fund
 
 # Step 5: Copy the rest of your client-side code into the container
 COPY . .
@@ -50,7 +51,7 @@ ENV NEXT_PUBLIC_CHATBOT_URL=$NEXT_PUBLIC_CHATBOT_URL
 ENV NEXT_PUBLIC_MYNOTEBOOKLM_URL=$NEXT_PUBLIC_MYNOTEBOOKLM_URL
 
 # Step 6: Build your Next.js application
-RUN npm run build
+RUN NEXT_TELEMETRY_DISABLED=1 npm run build
 
 # Step 7: Expose the port Next.js runs on
 EXPOSE 3000
