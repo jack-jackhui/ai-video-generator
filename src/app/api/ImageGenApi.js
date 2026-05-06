@@ -1,37 +1,56 @@
-// api/ImageGenApi.js
-// const WEBHOOK_BASE_URL = 'https://automate.jackhui.com.au/webhook';
-// const API_KEY = process.env.NEXT_PUBLIC_IMAGE_GEN_API_KEY;
-import { authApi } from './AuthApi';
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:9090';
-const API_BASE_URL = `${backendUrl}/api`;
+// Client wrapper for the Next.js image generation API routes.
+// Azure OpenAI credentials stay server-side in the app environment file.
+
+async function parseErrorResponse(response, fallback) {
+    try {
+        const data = await response.json();
+        return data?.error || data?.message || fallback;
+    } catch {
+        return fallback;
+    }
+}
 
 class ImageGenApi {
     static async generateImage(prompt) {
-        try {
-            const response = await authApi.post(`${API_BASE_URL}/generate-image/`, { query: prompt }, { headers: { 'Content-Type': 'application/json' } });
-            return response.data;
-        } catch (error) {
-            console.error('Error generating image:', error);
-            throw error;
+        const response = await fetch('/api/image-generation/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt }),
+        });
+
+        if (!response.ok) {
+            const message = await parseErrorResponse(response, 'Error generating image.');
+            throw new Error(message);
         }
+
+        return response.json();
     }
 
-    static async editImage(file, prompt) {
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('prompt', prompt);
-            const response = await authApi.post(`${API_BASE_URL}/edit-image/`, formData, {
-                responseType: 'blob',
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error editing image:', error);
-            throw error;
+    static async editImage(file, prompt, mask = null) {
+        const formData = new FormData();
+        formData.append('image', file);
+        if (mask) formData.append('mask', mask);
+        formData.append('prompt', prompt);
+
+        const response = await fetch('/api/image-generation/edit', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const message = await parseErrorResponse(response, 'Error editing image.');
+            throw new Error(message);
         }
+
+        return response.blob();
     }
 
     static async fetchImageWithProxy(imageUrl) {
+        if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
+            const response = await fetch(imageUrl);
+            return response.blob();
+        }
+
         try {
             const proxyResponse = await fetch('/api/proxy-image', {
                 method: 'POST',
