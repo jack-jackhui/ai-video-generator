@@ -7,11 +7,14 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import { useVideoGenForm } from '../hooks/useVideoGenForm';
+import VideoEngineSelector from './video/VideoEngineSelector';
 import DefaultVideoForm from './video/DefaultVideoForm';
+import StudioVideoForm from './video/StudioVideoForm';
 import BackgroundVideoCarousel from './video/BackgroundVideoCarousel';
 import { VideoProcessingModal } from './ProcessingModal';
 
 const VideoGeneratorPage = () => {
+    const [backendOption, setBackendOption] = useState('default');
     const { isAuthenticated, setShowLoginModal } = useAuth();
     const router = useRouter();
     const [visible, setVisible] = useState(false);
@@ -20,6 +23,10 @@ const VideoGeneratorPage = () => {
     const [taskCompleted, setTaskCompleted] = useState(false);
     const [taskProgress, setTaskProgress] = useState(0);
     const [isScriptGenerating, setIsScriptGenerating] = useState(false);
+    
+    // Studio-specific state
+    const [nScenes, setNScenes] = useState(3);
+    const [frameTemplate, setFrameTemplate] = useState('1080x1920/image_default.html');
 
     const {
         videoSubject,
@@ -43,12 +50,21 @@ const VideoGeneratorPage = () => {
     } = useVideoGenForm();
 
     const handleSubmit = useDebouncedCallback(async () => {
-        if (!validateForm()) return;
+        // Validate based on backend option
+        if (backendOption === 'default') {
+            if (!validateForm()) return;
 
-        if (Array.isArray(videoTerms) && videoTerms.length === 0) {
-            await generateVideoKeywords();
-        } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
-            await generateVideoKeywords();
+            if (Array.isArray(videoTerms) && videoTerms.length === 0) {
+                await generateVideoKeywords();
+            } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
+                await generateVideoKeywords();
+            }
+        } else if (backendOption === 'studio') {
+            // Studio mode only needs video description
+            if (!videoSubject.trim()) {
+                toast.error("Please enter a video description.");
+                return;
+            }
         }
 
         if (!isAuthenticated) {
@@ -60,8 +76,26 @@ const VideoGeneratorPage = () => {
         setVisible(true);
 
         try {
-            const endpoint = '/api/v1/videos';
-            const response = await videoApi.post(endpoint, getFormData());
+            let endpoint;
+            let payload;
+            
+            if (backendOption === 'studio') {
+                // AI Video Studio mode - uses studio proxy endpoint
+                endpoint = '/api/v1/studio/videos';
+                payload = {
+                    text: videoSubject,
+                    video_aspect: aspectRatio.value || '9:16',
+                    n_scenes: nScenes,
+                    frame_template: frameTemplate,
+                    mode: 'batch',  // Always use batch/async for video generation
+                };
+            } else {
+                // Default Stock Video mode
+                endpoint = '/api/v1/videos';
+                payload = getFormData();
+            }
+            
+            const response = await videoApi.post(endpoint, payload);
             const result = response.data;
             if (response.status === 200) {
                 setTaskId(result.data.task_id);
@@ -135,7 +169,12 @@ const VideoGeneratorPage = () => {
 
     const checkTaskStatus = useCallback(async () => {
         try {
-            const response = await videoApi.get(`/api/v1/tasks/${taskId}`);
+            // Use the appropriate task status endpoint based on backend
+            const taskEndpoint = backendOption === 'studio' 
+                ? `/api/v1/studio/tasks/${taskId}`
+                : `/api/v1/tasks/${taskId}`;
+            
+            const response = await videoApi.get(taskEndpoint);
             const result = response.data;
             setTaskProgress(result.data.progress);
             if (response.status === 200 && result.data.progress === 100) {
@@ -145,7 +184,7 @@ const VideoGeneratorPage = () => {
         } catch (error) {
             console.error("Error fetching task status:", error);
         }
-    }, [taskId]);
+    }, [taskId, backendOption]);
 
     useEffect(() => {
         if (!taskId || taskCompleted) return;
@@ -179,29 +218,54 @@ const VideoGeneratorPage = () => {
                                 <h3 className="text-center text-2xl md:text-3xl font-bold w-full">
                                     AI Video Generator
                                 </h3>
-
-                                <DefaultVideoForm
-                                    videoSubject={videoSubject}
-                                    videoScript={videoScript}
-                                    videoTerms={videoTerms}
-                                    aspectRatio={aspectRatio}
-                                    audio={audio}
-                                    subtitleFont={subtitleFont}
-                                    soundEffects={soundEffects}
-                                    isInvalid={isInvalid}
-                                    errors={errors}
-                                    isSubmitting={isSubmitting}
-                                    taskCompleted={taskCompleted}
-                                    isScriptGenerating={isScriptGenerating}
-                                    onVideoSubjectChange={handleChange}
-                                    onAspectRatioChange={setAspectRatio}
-                                    onAudioChange={setAudio}
-                                    onSubtitleFontChange={setSubtitleFont}
-                                    onSoundEffectsChange={setSoundEffects}
-                                    onGenerateScript={generateVideoScript}
-                                    onGenerateKeywords={generateVideoKeywords}
-                                    onSubmit={handleSubmit}
+                                
+                                <VideoEngineSelector
+                                    value={backendOption}
+                                    onChange={setBackendOption}
                                 />
+
+                                {backendOption === "studio" && (
+                                    <StudioVideoForm
+                                        videoSubject={videoSubject}
+                                        aspectRatio={aspectRatio}
+                                        nScenes={nScenes}
+                                        frameTemplate={frameTemplate}
+                                        isInvalid={isInvalid}
+                                        errors={errors}
+                                        isSubmitting={isSubmitting}
+                                        taskCompleted={taskCompleted}
+                                        onVideoSubjectChange={handleChange}
+                                        onAspectRatioChange={setAspectRatio}
+                                        onNScenesChange={setNScenes}
+                                        onFrameTemplateChange={setFrameTemplate}
+                                        onSubmit={handleSubmit}
+                                    />
+                                )}
+
+                                {backendOption === "default" && (
+                                    <DefaultVideoForm
+                                        videoSubject={videoSubject}
+                                        videoScript={videoScript}
+                                        videoTerms={videoTerms}
+                                        aspectRatio={aspectRatio}
+                                        audio={audio}
+                                        subtitleFont={subtitleFont}
+                                        soundEffects={soundEffects}
+                                        isInvalid={isInvalid}
+                                        errors={errors}
+                                        isSubmitting={isSubmitting}
+                                        taskCompleted={taskCompleted}
+                                        isScriptGenerating={isScriptGenerating}
+                                        onVideoSubjectChange={handleChange}
+                                        onAspectRatioChange={setAspectRatio}
+                                        onAudioChange={setAudio}
+                                        onSubtitleFontChange={setSubtitleFont}
+                                        onSoundEffectsChange={setSoundEffects}
+                                        onGenerateScript={generateVideoScript}
+                                        onGenerateKeywords={generateVideoKeywords}
+                                        onSubmit={handleSubmit}
+                                    />
+                                )}
                             </div>
                         </CardBody>
                     </Card>

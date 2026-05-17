@@ -3,7 +3,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 const FIELD_LIMITS = {
-    videoSubject: 150,
+    videoSubject: 2000,  // Increased for studio mode descriptions
     videoScript: 2000,
     videoKeywords: 100
 };
@@ -57,13 +57,18 @@ export function useVideoGenForm() {
         }
     };
 
-    const validateForm = () => {
+    /**
+     * Validate form based on backend option
+     * @param {string} backendOption - 'default' or 'studio'
+     */
+    const validateForm = (backendOption = 'default') => {
         if (!videoSubject.trim()) {
             toast.error("Please enter a video subject/description.");
             return false;
         }
 
-        if (!audio.value) {
+        // Audio is only required for default (stock video) mode
+        if (backendOption === 'default' && !audio.value) {
             toast.error("Please select an audio option.");
             return false;
         }
@@ -71,30 +76,45 @@ export function useVideoGenForm() {
         return true;
     };
 
-    const getFormData = () => ({
-        video_subject: videoSubject,
-        video_script: videoScript,
-        video_terms: videoTerms,
-        video_aspect: aspectRatio.value,
-        video_source: "default",
-        video_clip_duration: 5,
-        video_count: 1,
-        video_language: "",
-        voice_name: audio.value,
-        bgm_type: "random",
-        bgm_file: "",
-        bgm_volume: 0.2,
-        subtitle_enabled: true,
-        subtitle_position: "bottom",
-        font_name: subtitleFont.value,
-        text_fore_color: "#FFFFFF",
-        text_background_color: "transparent",
-        font_size: 60,
-        stroke_color: "#000000",
-        stroke_width: 2,
-        n_threads: 2,
-        paragraph_number: 1
-    });
+    /**
+     * Get form data for API submission
+     * @param {string} backendOption - 'default' or 'studio'
+     */
+    const getFormData = (backendOption = 'default') => {
+        if (backendOption === 'studio') {
+            return {
+                text: videoSubject,
+                video_aspect: aspectRatio.value || '9:16',
+                mode: 'batch',
+            };
+        }
+        
+        // Default stock video form data
+        return {
+            video_subject: videoSubject,
+            video_script: videoScript,
+            video_terms: videoTerms,
+            video_aspect: aspectRatio.value,
+            video_source: "default",
+            video_clip_duration: 5,
+            video_count: 1,
+            video_language: "",
+            voice_name: audio.value,
+            bgm_type: "random",
+            bgm_file: "",
+            bgm_volume: 0.2,
+            subtitle_enabled: true,
+            subtitle_position: "bottom",
+            font_name: subtitleFont.value,
+            text_fore_color: "#FFFFFF",
+            text_background_color: "transparent",
+            font_size: 60,
+            stroke_color: "#000000",
+            stroke_width: 2,
+            n_threads: 2,
+            paragraph_number: 1
+        };
+    };
 
     return {
         // Form values
