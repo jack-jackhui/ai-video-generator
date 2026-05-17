@@ -38,3 +38,7 @@ logs
 
 # Local shell scripts
 build_and_push.sh
+
+# Crash dumps
+*.core
+qemu_*.core
