@@ -67,7 +67,10 @@ export default function StudioVideoForm({
                     label="Number of Scenes"
                     placeholder="Select scenes"
                     selectedKeys={[String(nScenes || 3)]}
-                    onChange={(e) => onNScenesChange(parseInt(e.target.value))}
+                    onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        onNScenesChange(Number.isNaN(val) ? 3 : val);
+                    }}
                     variant="bordered"
                     className="w-full"
                 >

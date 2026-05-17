@@ -85,7 +85,7 @@ const VideoGeneratorPage = () => {
                 payload = {
                     text: videoSubject,
                     video_aspect: aspectRatio.value || '9:16',
-                    n_scenes: nScenes,
+                    n_scenes: Number.isInteger(nScenes) && nScenes >= 1 ? nScenes : 3,
                     frame_template: frameTemplate,
                     mode: 'batch',  // Always use batch/async for video generation
                 };
