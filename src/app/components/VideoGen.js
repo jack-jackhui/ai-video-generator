@@ -13,6 +13,8 @@ import StudioVideoForm from './video/StudioVideoForm';
 import BackgroundVideoCarousel from './video/BackgroundVideoCarousel';
 import { VideoProcessingModal } from './ProcessingModal';
 
+const DEFAULT_STUDIO_FRAME_TEMPLATE = '1080x1920/image_default.html';
+
 const VideoGeneratorPage = () => {
     const [backendOption, setBackendOption] = useState('default');
     const { isAuthenticated, setShowLoginModal } = useAuth();
@@ -26,7 +28,7 @@ const VideoGeneratorPage = () => {
     
     // Studio-specific state
     const [nScenes, setNScenes] = useState(3);
-    const [frameTemplate, setFrameTemplate] = useState('1080x1920/image_default.html');
+    const [frameTemplate, setFrameTemplate] = useState(DEFAULT_STUDIO_FRAME_TEMPLATE);
 
     const {
         videoSubject,
@@ -86,7 +88,7 @@ const VideoGeneratorPage = () => {
                     text: videoSubject,
                     video_aspect: aspectRatio.value || '9:16',
                     n_scenes: Number.isInteger(nScenes) && nScenes >= 1 ? nScenes : 3,
-                    frame_template: frameTemplate,
+                    frame_template: frameTemplate || DEFAULT_STUDIO_FRAME_TEMPLATE,
                     mode: 'generate',  // Studio API accepts generate/fixed; async is handled by endpoint
                 };
             } else {
@@ -176,8 +178,23 @@ const VideoGeneratorPage = () => {
             
             const response = await videoApi.get(taskEndpoint);
             const result = response.data;
-            setTaskProgress(result.data.progress);
-            if (response.status === 200 && result.data.progress === 100) {
+            const data = result.data || {};
+            const progress = Number.isFinite(data.progress) ? data.progress : 0;
+            const status = (data.status || '').toLowerCase();
+
+            setTaskProgress(progress);
+
+            if (response.status === 200 && (status === 'failed' || data.error)) {
+                toast.error(`Video generation failed: ${data.error || 'Unknown error'}`);
+                setIsSubmitting(false);
+                setVisible(false);
+                setTaskId(null);
+                setTaskProgress(0);
+                return;
+            }
+
+            if (response.status === 200 && (progress === 100 || status === 'completed')) {
+                setTaskProgress(100);
                 setTaskCompleted(true);
                 setIsSubmitting(false);
             }

@@ -8,8 +8,10 @@ const ASPECT_RATIO_OPTIONS = [
     { "Square 1:1 (Instagram)": "1:1" }
 ];
 
+const DEFAULT_STUDIO_FRAME_TEMPLATE = '1080x1920/image_default.html';
+
 const TEMPLATE_OPTIONS = [
-    { label: "Default (Image-based)", value: "1080x1920/image_default.html" },
+    { label: "Default (Image-based)", value: DEFAULT_STUDIO_FRAME_TEMPLATE },
     { label: "Cinematic", value: "1080x1920/cinematic.html" },
     { label: "Minimal", value: "1080x1920/minimal.html" }
 ];
@@ -85,7 +87,7 @@ export default function StudioVideoForm({
                     label="Video Template"
                     placeholder="Select template"
                     selectedKeys={[frameTemplate || TEMPLATE_OPTIONS[0].value]}
-                    onChange={(e) => onFrameTemplateChange(e.target.value)}
+                    onChange={(e) => onFrameTemplateChange(e.target.value || DEFAULT_STUDIO_FRAME_TEMPLATE)}
                     variant="bordered"
                     className="w-full"
                 >
