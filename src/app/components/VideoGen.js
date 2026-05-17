@@ -87,7 +87,7 @@ const VideoGeneratorPage = () => {
                     video_aspect: aspectRatio.value || '9:16',
                     n_scenes: Number.isInteger(nScenes) && nScenes >= 1 ? nScenes : 3,
                     frame_template: frameTemplate,
-                    mode: 'batch',  // Always use batch/async for video generation
+                    mode: 'generate',  // Studio API accepts generate/fixed; async is handled by endpoint
                 };
             } else {
                 // Default Stock Video mode

@@ -85,7 +85,7 @@ export function useVideoGenForm() {
             return {
                 text: videoSubject,
                 video_aspect: aspectRatio.value || '9:16',
-                mode: 'batch',
+                mode: 'generate',
             };
         }
         
