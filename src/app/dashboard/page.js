@@ -12,24 +12,48 @@ export default function Dashboard() {
     const apiUrl = process.env.NEXT_PUBLIC_VIDEO_GEN_API_URL;
     const searchParams = useSearchParams();
     const taskId = searchParams.get('taskId');
+    const backend = searchParams.get('backend'); // 'studio' or null for default
     const [videoUrls, setVideoUrls] = useState([]);
     const [loading, setLoading] = useState(false);
+
     const fetchTaskInfo = useCallback(async () => {
         if (!taskId) return;
         setLoading(true);
         try {
-            const response = await videoApi.get(`/api/v1/tasks/${taskId}`);
+            // Use the appropriate task status endpoint based on backend
+            const taskEndpoint = backend === 'studio' 
+                ? `/api/v1/studio/tasks/${taskId}`
+                : `/api/v1/tasks/${taskId}`;
+            
+            const response = await videoApi.get(taskEndpoint);
             const data = response.data;
+            
             if (data && data.data) {
                 let videoList = [];
-                if (Array.isArray(data.data.original_videos) && data.data.original_videos.length > 0) {
-                    videoList = data.data.original_videos;
-                } else if (Array.isArray(data.data.videos)) {
-                    videoList = data.data.videos;
+                
+                if (backend === 'studio') {
+                    // Studio API returns video_url directly pointing to the file endpoint
+                    if (data.data.video_url) {
+                        // video_url is already a full URL like /api/v1/studio/files/<run_dir>/final.mp4
+                        const studioUrl = data.data.video_url.startsWith('http') 
+                            ? data.data.video_url 
+                            : `${apiUrl}${data.data.video_url}`;
+                        videoList = [studioUrl];
+                    }
+                } else {
+                    // Default backend returns videos/original_videos arrays
+                    if (Array.isArray(data.data.original_videos) && data.data.original_videos.length > 0) {
+                        videoList = data.data.original_videos;
+                    } else if (Array.isArray(data.data.videos)) {
+                        videoList = data.data.videos;
+                    }
+                    // Map relative paths to download endpoint
+                    videoList = videoList.map(
+                        p => p.startsWith('http') ? p : `${apiUrl}/api/v1/download/${p.replace(/^\/+/, '')}`
+                    );
                 }
-                setVideoUrls(videoList.map(
-                    p => p.startsWith('http') ? p : `${apiUrl}/api/v1/download/${p.replace(/^\/+/, '')}`
-                ));
+                
+                setVideoUrls(videoList);
             } else {
                 setVideoUrls([]);
             }
@@ -38,7 +62,7 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
-    }, [taskId, apiUrl]);
+    }, [taskId, backend, apiUrl]);
 
     useEffect(() => {
         fetchTaskInfo();

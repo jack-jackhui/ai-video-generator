@@ -218,7 +218,8 @@ const VideoGeneratorPage = () => {
     const handleNavigate = () => {
         if (taskCompleted && taskId) {
             const taskIdStr = typeof taskId === 'number' ? taskId.toString() : taskId;
-            router.push(`/dashboard?taskId=${taskIdStr}`);
+            const backendParam = backendOption === 'studio' ? '&backend=studio' : '';
+            router.push(`/dashboard?taskId=${taskIdStr}${backendParam}`);
             handleClose();
         }
     };
