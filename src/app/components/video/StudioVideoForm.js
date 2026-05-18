@@ -10,10 +10,15 @@ const ASPECT_RATIO_OPTIONS = [
 
 const DEFAULT_STUDIO_FRAME_TEMPLATE = '1080x1920/image_default.html';
 
+// Template options must match files in studio/templates/1080x1920/
 const TEMPLATE_OPTIONS = [
     { label: "Default (Image-based)", value: DEFAULT_STUDIO_FRAME_TEMPLATE },
-    { label: "Cinematic", value: "1080x1920/cinematic.html" },
-    { label: "Minimal", value: "1080x1920/minimal.html" }
+    { label: "Elegant", value: "1080x1920/image_elegant.html" },
+    { label: "Modern", value: "1080x1920/image_modern.html" },
+    { label: "Neon", value: "1080x1920/image_neon.html" },
+    { label: "Full Image", value: "1080x1920/image_full.html" },
+    { label: "Healing", value: "1080x1920/image_healing.html" },
+    { label: "Video Default", value: "1080x1920/video_default.html" }
 ];
 
 /**
