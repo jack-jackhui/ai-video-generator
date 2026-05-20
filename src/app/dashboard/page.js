@@ -15,37 +15,61 @@ export default function Dashboard() {
     const backend = searchParams.get('backend'); // 'studio' or null for default
     const [videoUrls, setVideoUrls] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const fetchTaskInfo = useCallback(async () => {
         if (!taskId) return;
         setLoading(true);
+        setError(null);
         try {
-            // Use the appropriate task status endpoint based on backend
-            const taskEndpoint = backend === 'studio' 
-                ? `/api/v1/studio/tasks/${taskId}`
-                : `/api/v1/tasks/${taskId}`;
+            let taskEndpoint;
+            
+            if (backend === 'studio') {
+                // Use new public-safe result endpoint for studio tasks
+                taskEndpoint = `/api/v1/studio/result/${taskId}`;
+            } else {
+                // Default backend uses tasks endpoint
+                taskEndpoint = `/api/v1/tasks/${taskId}`;
+            }
             
             const response = await videoApi.get(taskEndpoint);
-            const data = response.data;
+            const responseData = response.data;
             
-            if (data && data.data) {
+            // Normalize data structure - handle both data.data and data directly
+            const data = responseData?.data || responseData;
+            
+            if (data) {
                 let videoList = [];
                 
                 if (backend === 'studio') {
-                    // Studio API returns video_url directly pointing to the file endpoint
-                    if (data.data.video_url) {
+                    // Studio API: check multiple possible locations for video URL
+                    // Support data.video_url, data.videos array, or nested data.data.video_url
+                    const videoUrl = data.video_url || data.data?.video_url;
+                    const videosArray = data.videos || data.data?.videos;
+                    
+                    if (videoUrl) {
                         // video_url is already a full URL like /api/v1/studio/files/<run_dir>/final.mp4
-                        const studioUrl = data.data.video_url.startsWith('http') 
-                            ? data.data.video_url 
-                            : `${apiUrl}${data.data.video_url}`;
+                        const studioUrl = videoUrl.startsWith('http') 
+                            ? videoUrl 
+                            : `${apiUrl}${videoUrl}`;
                         videoList = [studioUrl];
+                    } else if (Array.isArray(videosArray) && videosArray.length > 0) {
+                        // Use videos array if video_url not present
+                        videoList = videosArray.map(url => 
+                            url.startsWith('http') ? url : `${apiUrl}${url}`
+                        );
+                    }
+                    
+                    // Handle error status
+                    if (data.status === 'failed' && data.error) {
+                        setError(data.error);
                     }
                 } else {
                     // Default backend returns videos/original_videos arrays
-                    if (Array.isArray(data.data.original_videos) && data.data.original_videos.length > 0) {
-                        videoList = data.data.original_videos;
-                    } else if (Array.isArray(data.data.videos)) {
-                        videoList = data.data.videos;
+                    if (Array.isArray(data.original_videos) && data.original_videos.length > 0) {
+                        videoList = data.original_videos;
+                    } else if (Array.isArray(data.videos)) {
+                        videoList = data.videos;
                     }
                     // Map relative paths to download endpoint
                     videoList = videoList.map(
@@ -57,7 +81,9 @@ export default function Dashboard() {
             } else {
                 setVideoUrls([]);
             }
-        } catch {
+        } catch (err) {
+            console.error("Error fetching task info:", err);
+            setError(err.message || "Failed to fetch task info");
             setVideoUrls([]);
         } finally {
             setLoading(false);
@@ -96,13 +122,19 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             )}
-                            {!loading && downloadUrl && (
+                            {!loading && error && (
+                                <div className="text-center text-red-400 py-8">
+                                    <p className="text-lg font-medium">Video generation failed</p>
+                                    <p className="text-sm mt-2">{error}</p>
+                                </div>
+                            )}
+                            {!loading && !error && downloadUrl && (
                                 <video controls className="w-full">
                                     <source src={downloadUrl} type="video/mp4" />
                                     Your browser does not support the video tag.
                                 </video>
                             )}
-                            {!taskId && !downloadUrl && !loading && (
+                            {!taskId && !downloadUrl && !loading && !error && (
                                 <Image
                                     removeWrapper
                                     alt="Relaxing app background"

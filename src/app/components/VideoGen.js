@@ -29,6 +29,7 @@ const VideoGeneratorPage = () => {
     // Studio-specific state
     const [nScenes, setNScenes] = useState(3);
     const [frameTemplate, setFrameTemplate] = useState(DEFAULT_STUDIO_FRAME_TEMPLATE);
+    const [visualStyle, setVisualStyle] = useState(''); // prompt_prefix for visual style
 
     const {
         videoSubject,
@@ -91,6 +92,11 @@ const VideoGeneratorPage = () => {
                     frame_template: frameTemplate || DEFAULT_STUDIO_FRAME_TEMPLATE,
                     mode: 'generate',  // Studio API accepts generate/fixed; async is handled by endpoint
                 };
+                
+                // Add visual style (prompt_prefix) if selected
+                if (visualStyle) {
+                    payload.prompt_prefix = visualStyle;
+                }
             } else {
                 // Default Stock Video mode
                 endpoint = '/api/v1/videos';
@@ -248,6 +254,7 @@ const VideoGeneratorPage = () => {
                                         aspectRatio={aspectRatio}
                                         nScenes={nScenes}
                                         frameTemplate={frameTemplate}
+                                        visualStyle={visualStyle}
                                         isInvalid={isInvalid}
                                         errors={errors}
                                         isSubmitting={isSubmitting}
@@ -256,6 +263,7 @@ const VideoGeneratorPage = () => {
                                         onAspectRatioChange={setAspectRatio}
                                         onNScenesChange={setNScenes}
                                         onFrameTemplateChange={setFrameTemplate}
+                                        onVisualStyleChange={setVisualStyle}
                                         onSubmit={handleSubmit}
                                     />
                                 )}
