@@ -9,6 +9,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { useVideoGenForm } from '../hooks/useVideoGenForm';
 import VideoEngineSelector from './video/VideoEngineSelector';
 import DefaultVideoForm from './video/DefaultVideoForm';
+import SoraVideoForm from './video/SoraVideoForm';
 import StudioVideoForm from './video/StudioVideoForm';
 import BackgroundVideoCarousel from './video/BackgroundVideoCarousel';
 import { VideoProcessingModal } from './ProcessingModal';
@@ -54,19 +55,22 @@ const VideoGeneratorPage = () => {
 
     const handleSubmit = useDebouncedCallback(async () => {
         // Validate based on backend option
-        if (backendOption === 'default') {
-            if (!validateForm()) return;
-
-            if (Array.isArray(videoTerms) && videoTerms.length === 0) {
-                await generateVideoKeywords();
-            } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
-                await generateVideoKeywords();
-            }
-        } else if (backendOption === 'studio') {
+        if (backendOption === 'studio') {
             // Studio mode only needs video description
             if (!videoSubject.trim()) {
                 toast.error("Please enter a video description.");
                 return;
+            }
+        } else {
+            if (!validateForm(backendOption)) return;
+
+            // Stock video generation still needs keywords; Sora only needs the prompt.
+            if (backendOption === 'default') {
+                if (Array.isArray(videoTerms) && videoTerms.length === 0) {
+                    await generateVideoKeywords();
+                } else if (typeof videoTerms === 'string' && !videoTerms.trim()) {
+                    await generateVideoKeywords();
+                }
             }
         }
 
@@ -100,7 +104,7 @@ const VideoGeneratorPage = () => {
             } else {
                 // Default Stock Video mode
                 endpoint = '/api/v1/videos';
-                payload = getFormData();
+                payload = getFormData(backendOption);
             }
             
             const response = await videoApi.post(endpoint, payload);
@@ -247,6 +251,20 @@ const VideoGeneratorPage = () => {
                                     value={backendOption}
                                     onChange={setBackendOption}
                                 />
+
+                                {backendOption === "sora" && (
+                                    <SoraVideoForm
+                                        videoSubject={videoSubject}
+                                        aspectRatio={aspectRatio}
+                                        isInvalid={isInvalid}
+                                        errors={errors}
+                                        isSubmitting={isSubmitting}
+                                        taskCompleted={taskCompleted}
+                                        onVideoSubjectChange={handleChange}
+                                        onAspectRatioChange={setAspectRatio}
+                                        onSubmit={handleSubmit}
+                                    />
+                                )}
 
                                 {backendOption === "studio" && (
                                     <StudioVideoForm

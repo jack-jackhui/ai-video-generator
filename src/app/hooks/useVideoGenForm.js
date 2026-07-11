@@ -59,7 +59,7 @@ export function useVideoGenForm() {
 
     /**
      * Validate form based on backend option
-     * @param {string} backendOption - 'default' or 'studio'
+     * @param {string} backendOption - 'default', 'sora', or 'studio'
      */
     const validateForm = (backendOption = 'default') => {
         if (!videoSubject.trim()) {
@@ -78,7 +78,7 @@ export function useVideoGenForm() {
 
     /**
      * Get form data for API submission
-     * @param {string} backendOption - 'default' or 'studio'
+     * @param {string} backendOption - 'default', 'sora', or 'studio'
      */
     const getFormData = (backendOption = 'default') => {
         if (backendOption === 'studio') {
@@ -95,7 +95,9 @@ export function useVideoGenForm() {
             video_script: videoScript,
             video_terms: videoTerms,
             video_aspect: aspectRatio.value,
-            video_source: "default",
+            // `sora` is the established AI-Video-Engine routing value. The
+            // Azure model/deployment selection remains a backend responsibility.
+            video_source: backendOption === "sora" ? "sora" : "default",
             video_clip_duration: 5,
             video_count: 1,
             video_language: "",
